@@ -25,8 +25,8 @@ struct PartidaContinental {
 // --- Estructuras para el JUEGO 2: CHINCHÓN ---
 struct JugadorChinchon {
     char nombre[30];
-    int puntosPorRonda[50];          // Historial de puntos sueltos por ronda (capacidad amplia)
-    int puntosAcumuladosEnRonda[50]; // Sumas parciales acumuladas ronda tras ronda
+    int puntosPorRonda[50];          // Historial de puntos sueltos por ronda
+    int puntosAcumuladosEnRonda[50]; // Sumas parciales acumuladas
     int puntosTotales;               
     bool yaAnoto;                    
 };
@@ -34,7 +34,7 @@ struct JugadorChinchon {
 struct PartidaChinchon {
     struct JugadorChinchon listaJugadores[7]; // Máximo 7 participantes
     int cantidadJugadores;            
-    int rondaActual;                  // Contador dinámico de rondas (1, 2, 3...)
+    int rondaActual;                  // Contador dinámico de rondas
 };
 
 // --- PROTOTIPOS DE LAS FUNCIONES ---
@@ -52,7 +52,7 @@ void pantallaMesaJuego(struct PartidaContinental *partida);
 void ventanaEmergentePuntos(struct PartidaContinental *partida, int i);
 void pantallaResultadosFinales(struct PartidaContinental *partida);
 
-// Prototipos Módulo 2: Chinchón (¡NUEVO!)
+// Prototipos Módulo 2: Chinchón
 void jugarChinchon();
 void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida);
 void pantallaMesaChinchon(struct PartidaChinchon *partida);
@@ -65,7 +65,7 @@ void jugarEscoba();
 
 // Variables globales de las partidas
 struct PartidaContinental miPartida;
-struct PartidaChinchon miPartidaChinchon; // Instancia global para el Chinchón
+struct PartidaChinchon miPartidaChinchon; 
 
 // =================================================================
 // FLUJO PRINCIPAL
@@ -143,7 +143,7 @@ int controlarMenu() {
 void ejecutarJuego(int opcionSeleccionada) {
     switch(opcionSeleccionada) {
         case 1: jugarContinental(); break;
-        case 2: jugarChinchon();    break; // Enlazado al nuevo módulo
+        case 2: jugarChinchon();    break; 
         case 3: jugarTute();        break;
         case 4: jugarEscoba();      break;
     }
@@ -213,7 +213,7 @@ void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud) {
 }
 
 // =================================================================
-// JUEGO 1: CONTINENTAL (INTACTO)
+// JUEGO 1: CONTINENTAL
 // =================================================================
 
 void jugarContinental() {
@@ -502,14 +502,13 @@ void pantallaResultadosFinales(struct PartidaContinental *partida) {
 }
 
 // =================================================================
-// JUEGO 2: CHINCHÓN (¡NUEVO MÓDULO ADAPTADO!)
+// JUEGO 2: CHINCHÓN (MÓDULO CORREGIDO Y COMPLETO)
 // =================================================================
 
 void jugarChinchon() {
     miPartidaChinchon.cantidadJugadores = 0;
     miPartidaChinchon.rondaActual = 1;      
     
-    // Inicialización limpia de la estructura del Chinchón
     for(int i = 0; i < 7; i++) {
         miPartidaChinchon.listaJugadores[i].puntosTotales = 0;
         miPartidaChinchon.listaJugadores[i].yaAnoto = false;
@@ -519,16 +518,13 @@ void jugarChinchon() {
         }
     }
     
-    // Fase 1: Registro de nombres específico para Chinchón
     pantallaConfigurarJugadoresChinchon(&miPartidaChinchon);
     
-    // Si hay jugadores guardados, abrimos la mesa interactiva
     if (miPartidaChinchon.cantidadJugadores > 0) {
         pantallaMesaChinchon(&miPartidaChinchon);
     }
 }
 
-// FASE 1 CHINCHÓN: Configuración de Participantes (Idéntica al Continental)
 void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
     bool salirAjustes = false;
     int clickX, clickY;
@@ -602,10 +598,10 @@ void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
                     setcolor(YELLOW);
                     rectangle(680, filaY, 1000, filaY + 40);
                     setcolor(WHITE);
-                    char nombreEditado[30] = "";
-                    leerTextoGrafico(690, filaY + 20, nombreEditado, 25);
-                    if(strlen(nombreEditado) > 0) {
-                        strcpy(partida->listaJugadores[i].nombre, nombreEditado);
+                    char nombreEditated[30] = "";
+                    leerTextoGrafico(690, filaY + 20, nombreEditated, 25);
+                    if(strlen(nombreEditated) > 0) {
+                        strcpy(partida->listaJugadores[i].nombre, nombreEditated);
                     }
                     break;
                 }
@@ -615,7 +611,6 @@ void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
     }
 }
 
-// FASE 2 CHINCHÓN: Mesa Interactiva Dinámica con Lógica de 100 Puntos
 void pantallaMesaChinchon(struct PartidaChinchon *partida) {
     bool terminarMesa = false;
     int clickX, clickY;
@@ -625,7 +620,7 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
         cleardevice();
         
         char bufferRonda[100];
-        sprintf(bufferRonda, "RONDA ACTIVA: %d (HASTA QUE ALGUIEN CON AVANCE DE PARCIAL LLEGUE A 100)", partida->rondaActual);
+        sprintf(bufferRonda, "RONDA ACTIVA: %d (HASTA QUE ALGUIEN LLEGUE A 100)", partida->rondaActual);
         
         settextjustify(CENTER_TEXT, CENTER_TEXT);
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 3);
@@ -636,7 +631,6 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
         outtextxy(50, 90, bufferRonda);
         
-        // Botón Siguiente Ronda
         settextjustify(CENTER_TEXT, CENTER_TEXT);
         rectangle(1280 - 280, 70, 1280 - 50, 120);
         outtextxy(1280 - 165, 95, (char*)"SIGUIENTE RONDA");
@@ -653,10 +647,8 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
             
             if(i > 0) line(colX, 140, colX, 720 - 150); 
             
-            // Imprimir el historial de puntuaciones parciales acumuladas
             settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
             
-            // Para mantener la pantalla limpia y legible, mostramos las últimas 12 rondas si la partida se alarga mucho
             int inicioMuestra = 0;
             if (partida->rondaActual > 12) inicioMuestra = partida->rondaActual - 12;
             
@@ -703,7 +695,6 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
                 }
                 
                 if (todosOk) {
-                    // VERIFICACIÓN CLAVE EXIGIDA: ¿Alguien ha alcanzado o superado los 100 puntos en esta ronda?
                     bool alguienPerdio = false;
                     int rIndex = partida->rondaActual - 1;
                     
@@ -715,9 +706,8 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
                     
                     if (alguienPerdio) {
                         terminarMesa = true; 
-                        pantallaResultadosChinchon(partida); // Saltamos a la pantalla de fin de partida
+                        pantallaResultadosChinchon(partida); 
                     } else {
-                        // Si nadie ha llegado a 100, limpiamos candados y avanzamos ronda indefinidamente
                         for(int i = 0; i < partida->cantidadJugadores; i++) {
                             partida->listaJugadores[i].yaAnoto = false;
                         }
@@ -740,7 +730,6 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
     }
 }
 
-// CAJA EMERGENTE DE CAPTURA DE PUNTOS PARA CHINCHÓN (Híbrida y anti-bloqueos)
 void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
     setcolor(WHITE);
     rectangle(250, 500, 1030, 690); 
@@ -778,7 +767,7 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
                     pos--;
                     bufferEntrada[pos] = '\0';
                     setfillstyle(SOLID_FILL, BLACK);
-                    bar(inicioEscribirX - 5, 540, 640, 580);
+                    bar(inicioEscribirX - 5, 540, 1000, 580);
                     setcolor(WHITE);
                     outtextxy(inicioEscribirX, 560, bufferEntrada);
                     outtextxy(inicioEscribirX + textwidth(bufferEntrada), 560, (char*)"_");
@@ -789,54 +778,43 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
                 pos++;
                 bufferEntrada[pos] = '\0';
                 setfillstyle(SOLID_FILL, BLACK);
-                bar(inicioEscribirX - 5, 540, 640, 580);
+                bar(inicioEscribirX - 5, 540, 1000, 580);
                 setcolor(WHITE);
                 outtextxy(inicioEscribirX, 560, bufferEntrada);
                 outtextxy(inicioEscribirX + textwidth(bufferEntrada), 560, (char*)"_");
             }
         }
-        
         if (ismouseclick(WM_LBUTTONDOWN)) {
             getmouseclick(WM_LBUTTONDOWN, cx, cy);
-            if (cx >= 650 && cx <= 850 && cy >= 580 && cy <= 630) {
-                continuar = false; 
-            }
+            if (cx >= 650 && cx <= 850 && cy >= 580 && cy <= 630) continuar = false; 
         }
         delay(10);
     }
     
     int ptsInput = 0;
     sscanf(bufferEntrada, "%d", &ptsInput);
-    
     int r = partida->rondaActual - 1;
     partida->listaJugadores[i].puntosPorRonda[r] = ptsInput;
     
     if (partida->rondaActual == 1) {
         partida->listaJugadores[i].puntosAcumuladosEnRonda[0] = ptsInput; 
     } else {
-        partida->listaJugadores[i].puntosAcumuladosEnRonda[r] = 
-            partida->listaJugadores[i].puntosAcumuladosEnRonda[r - 1] + ptsInput; 
+        partida->listaJugadores[i].puntosAcumuladosEnRonda[r] = partida->listaJugadores[i].puntosAcumuladosEnRonda[r - 1] + ptsInput; 
     }
-    
     partida->listaJugadores[i].yaAnoto = true;
 }
 
-// FASE 3 CHINCHÓN: Criterio de fin (Gana el menor, pierde el de >= 100)
 void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
     cleardevice();
-    prepararPantallaJuego("FIN DE PARTIDA - ALGUIEN SUPERÓ LOS 100 PUNTOS");
+    prepararPantallaJuego("RESULTADOS FINALES - CHINCHON");
     
-    int rUltima = partida->rondaActual - 1;
-    
-    // Guardamos los puntos finales del acumulado de la última ronda disputada
+    int rIndex = partida->rondaActual - 1;
     for (int i = 0; i < partida->cantidadJugadores; i++) {
-        partida->listaJugadores[i].puntosTotales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rUltima]; 
+        partida->listaJugadores[i].puntosTotales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex]; 
     }
     
-    // Buscamos el ganador (el que tiene MENOS puntos acumulados globales)
     int indiceGanador = 0;
     int menorPuntuacion = partida->listaJugadores[0].puntosTotales;
-    
     for (int i = 1; i < partida->cantidadJugadores; i++) {
         if (partida->listaJugadores[i].puntosTotales < menorPuntuacion) {
             menorPuntuacion = partida->listaJugadores[i].puntosTotales;
@@ -849,7 +827,6 @@ void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
     
     for (int i = 0; i < partida->cantidadJugadores; i++) {
         int colX = 50 + (i * anchoCol);
-        
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
         outtextxy(colX + (anchoCol / 2), 150, partida->listaJugadores[i].nombre);
         
@@ -857,30 +834,23 @@ void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
         sprintf(bufferTotales, "Total: %d pts", partida->listaJugadores[i].puntosTotales);
         outtextxy(colX + (anchoCol / 2), 200, bufferTotales);
         
-        // Marcamos de forma personalizada e inequívoca las condiciones de fin
-        if (partida->listaJugadores[i].puntosTotales >= 100) {
-            setcolor(LIGHTRED);
-            outtextxy(colX + (anchoCol / 2), 260, (char*)"ELIMINADO (>=100)");
-            setcolor(WHITE);
-        } 
-        else if (i == indiceGanador) {
+        if (i == indiceGanador) {
             setcolor(LIGHTGREEN);
             outtextxy(colX + (anchoCol / 2), 260, (char*)"GANADOR!!!");
             setcolor(WHITE);
-        } 
-        else {
-            char bufferResta[50];
-            int resta = partida->listaJugadores[i].puntosTotales - menorPuntuacion;
-            sprintf(bufferResta, "+%d respecto gan.", resta);
-            outtextxy(colX + (anchoCol / 2), 260, bufferResta);
+        } else {
+            setcolor(LIGHTRED);
+            outtextxy(colX + (anchoCol / 2), 260, (char*)"ELIMINADO");
+            setcolor(WHITE);
         }
         if(i > 0) line(colX, 120, colX, 320);
     }
-    
     line(50, 320, 1280 - 50, 320);
-    getch(); // Pausa explicativa para el tribunal
+    getch(); 
 }
 
-// --- OTROS MÓDULOS DE LA MESA (PROTOTIPOS RESTANTES) ---
-void jugarTute() { prepararPantallaJuego("MESA DE TUTE"); getch(); }
-void jugarEscoba() { prepararPantallaJuego("MESA DE LA ESCOBA"); getch(); }
+// =================================================================
+// PROTOTIPOS RESTANTES (VACÍOS PARA COMPILACIÓN)
+// =================================================================
+void jugarTute() {}
+void jugarEscoba() {}
