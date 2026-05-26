@@ -48,37 +48,37 @@ void dibujarMenu() {
     int centroX = getmaxx() / 2;
     int centroY = getmaxy() / 2;
     
-    // 2. CONFIGURAR LA ALINEACI”N DEL TEXTO (°Clave para que outtextxy centre de verdad!)
+    // 2. CONFIGURAR LA ALINEACIÁ≤ç DEL TEXTO („ÄÇlave para que outtextxy centre de verdad!)
     // CENTER_TEXT alinea horizontalmente al medio, y TOP_TEXT o BOTTOM_TEXT verticalmente
     settextjustify(CENTER_TEXT, CENTER_TEXT);
     
-    // --- TÕTULO ---
+    // --- TÁÇÜULO ---
     setcolor(WHITE);
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 4); // Un poco m·s grande para pantallas altas
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 4); // Un poco mÂ´≥ grande para pantallas altas
     outtextxy(centroX, centroY - 180, (char*)"BARAJA ESPANOLA");
     
-    // --- CONFIGURACI”N DE BOTONES ---
+    // --- CONFIGURACIÁ≤ç DE BOTONES ---
     settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
-    int anchoBoton = 170; // Mitad del ancho total del botÛn (340 pÌxeles en total)
-    int altoBoton = 25;   // Mitad del alto total del botÛn (50 pÌxeles en total)
+    int anchoBoton = 170; // Mitad del ancho total del botÈèÆ (340 pÁö§eles en total)
+    int altoBoton = 25;   // Mitad del alto total del botÈèÆ (50 pÁö§eles en total)
     
-    // BotÛn 1: CONTINENTAL (Posicionado arriba del centro de la pantalla)
+    // BotÈèÆ 1: CONTINENTAL (Posicionado arriba del centro de la pantalla)
     rectangle(centroX - anchoBoton, centroY - 100 - altoBoton, centroX + anchoBoton, centroY - 100 + altoBoton);
     outtextxy(centroX, centroY - 100, (char*)"CONTINENTAL");
     
-    // BotÛn 2: CHINCHON
+    // BotÈèÆ 2: CHINCHON
     rectangle(centroX - anchoBoton, centroY - 30 - altoBoton, centroX + anchoBoton, centroY - 30 + altoBoton);
     outtextxy(centroX, centroY - 30, (char*)"CHINCHON");
     
-    // BotÛn 3: TUTE
+    // BotÈèÆ 3: TUTE
     rectangle(centroX - anchoBoton, centroY + 40 - altoBoton, centroX + anchoBoton, centroY + 40 + altoBoton);
     outtextxy(centroX, centroY + 40, (char*)"TUTE");
     
-    // BotÛn 4: ESCOBA
+    // BotÈèÆ 4: ESCOBA
     rectangle(centroX - anchoBoton, centroY + 110 - altoBoton, centroX + anchoBoton, centroY + 110 + altoBoton);
     outtextxy(centroX, centroY + 110, (char*)"ESCOBA");
     
-    // --- NOTA DE PIE DE P¡GINA ---
+    // --- NOTA DE PIE DE PÁ§ÅINA ---
     settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
     outtextxy(centroX, centroY + 200, (char*)"Presiona ESC para salir del programa");
 }
@@ -116,3 +116,5 @@ void ejecutarJuego(int opcion) {
     outtextxy(centroX, centroY + 50, (char*)"Presiona cualquier tecla para volver al menu principal...");
     getch(); 
 }
+
+// Jefferson Andres
