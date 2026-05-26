@@ -1,166 +1,144 @@
-#include <stdio.h>   
-#include <conio.h>   
-#include <string.h>   
-#include <graphics.h> 
+#include <stdio.h>    // Librería estándar para entrada/salida (printf, scanf)
+#include <conio.h>    // Librería para manejo del teclado (kbhit, getch)
+#include <string.h>   // Librería para cadenas de texto (strcpy, sprintf)
+#include <graphics.h> // Librería gráfica para la interfaz visual
 
-// ==========================================
-// PROTOTIPOS DE LAS FUNCIONES DEL MENÚ
-// ==========================================
-// Declaramos las funciones antes de usarlas para que el compilador sepa que existen.
+// =================================================================
+// ESTRUCTURAS DE DATOS PARA EL JUEGO CONTINENTAL
+// =================================================================
+
+// Información individual de cada jugador
+struct Jugador {
+    char nombre[30];              // Nombre del jugador (ej: "ALEJANDRO")
+    int puntosPorMano[7];         // Puntos obtenidos en cada una de las 7 manos
+    int puntosTotales;            // Suma acumulada de sus puntos
+    bool yaHaPuntuadoManoActual;  // Control para evitar saltarse jugadores sin puntuar
+};
+
+// Control de la partida activa
+struct PartidaContinental {
+    struct Jugador listaJugadores[7]; // Array con espacio para un máximo de 7 jugadores
+    int cantidadJugadores;            // Cuántos jugadores se han añadido (empieza en 0)
+    int manoActual;                   // Mano que se está jugando (del 1 al 7)
+};
+
+// =================================================================
+// PROTOTIPOS DE LAS FUNCIONES
+// =================================================================
 void iniciarModoGrafico();
 void dibujarMenu();
 int controlarMenu();
 void ejecutarJuego(int opcionSeleccionada);
 
-// ==========================================
-// PROTOTIPOS DE LOS CUATRO JUEGOS
-// ==========================================
+// Modos de juego generales
 void jugarContinental();
 void jugarChinchon();
 void jugarTute();
 void jugarEscoba();
-void prepararPantallaJuego(char* nombreDelJuego); 
 
-// ==========================================
+// Subpantallas del modo Continental (Modularización)
+void prepararPantallaJuego(const char* nombreDelJuego); 
+void pantallaConfigurarJugadores(struct PartidaContinental *partida);
+void pantallaMesaJuego(struct PartidaContinental *partida);
+
+// Variable global que almacena el estado de la partida de Continental
+struct PartidaContinental miPartida;
+
+// =================================================================
 // FUNCIÓN PRINCIPAL (MAIN)
-// ==========================================
+// =================================================================
 int main() {
-    // Variable para guardar el juego que elija el usuario (1, 2, 3, 4 o 5 para salir)
     int opcionMenu = 0;
     
-    // Llamamos a la función que configura y abre la pantalla completa
-    iniciarModoGrafico();
+    iniciarModoGrafico(); // Inicializa el entorno BGI a pantalla completa
     
-    // Bucle principal: se ejecuta siempre a menos que se elija la opción 5 (Salir)
     do {
-        dibujarMenu();             // Pinta el título y los 4 botones rectangulares
-        opcionMenu = controlarMenu(); // Se queda esperando un clic o la tecla ESC
+        dibujarMenu();             // Dibuja el menú principal
+        opcionMenu = controlarMenu(); // Controla la selección por clic o ESC
         
-        // Si el usuario no ha elegido salir (opción 5), salta al juego seleccionado
         if (opcionMenu != 5) { 
             ejecutarJuego(opcionMenu);
         }
-    } while (opcionMenu != 5); // Condición de parada del programa
+    } while (opcionMenu != 5); 
     
-    closegraph(); // Libera la memoria gráfica y cierra la ventana al terminar el bucle
+    closegraph(); // Cierra los gráficos limpiamente al salir
     return 0;
 }
 
-// ==========================================
-// IMPLEMENTACIÓN DE LAS FUNCIONES DEL MENÚ
-// ==========================================
+// =================================================================
+// IMPLEMENTACIÓN DEL MENÚ PRINCIPAL
+// =================================================================
 
 void iniciarModoGrafico() {
-    // getmaxwidth() y getmaxheight() detectan la resolución real (píxeles) de tu monitor
-    int anchoPantalla = getmaxwidth();
-    int altoPantalla = getmaxheight();
+    int anchoPantalla = getmaxwidth();  
+    int altoPantalla = getmaxheight(); 
+    initwindow(anchoPantalla, altoPantalla, (char*)"TFG - Baraja Espanola", 0, 0, false, true); //
     
-    // initwindow crea la ventana gráfica. 
-    // Los últimos parámetros (false, true) activan el modo "Pantalla completa" (Fullscreen)
-    initwindow(anchoPantalla, altoPantalla, (char*)"TFG - Baraja Espanola", 0, 0, false, true);
-    
-    // graphresult() comprueba si la ventana gráfica se abrió correctamente sin errores
     if (graphresult() != grOk) {
         printf("Error al iniciar el entorno grafico.");
-        getch(); // Pausa para leer el error en la consola negra trasera
-        exit(1); // Cierra el programa de golpe indicando un fallo
+        getch();
+        exit(1);
     }
 }
 
 void dibujarMenu() {
-    cleardevice(); // Borra todo lo que haya en pantalla para dibujar el menú desde cero
-    
-    // Calculamos el centro exacto de la pantalla dividiendo la resolución total entre 2
+    cleardevice(); 
     int mitadX = getmaxx() / 2;
     int mitadY = getmaxy() / 2;
     
-    // ¡MUY IMPORTANTE!: Hace que las coordenadas de outtextxy apunten al CENTRO del texto, 
-    // logrando que las palabras queden perfectamente alineadas dentro de los botones.
-    settextjustify(CENTER_TEXT, CENTER_TEXT);
+    settextjustify(CENTER_TEXT, CENTER_TEXT); // Centra los textos en base a sus coordenadas
     
-    // --- TÍTULO PRINCIPAL ---
-    setcolor(WHITE); // Color blanco para el texto y las líneas
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 4); // Tipo de fuente por defecto, en horizontal, tamaño 4 (grande)
-    outtextxy(mitadX, mitadY - 180, (char*)"BARAJA ESPANOLA"); // Dibuja el texto centrado arriba
+    setcolor(WHITE);
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 4); 
+    outtextxy(mitadX, mitadY - 180, (char*)"BARAJA ESPANOLA");
     
-    // --- DISEÑO DE LOS BOTONES ---
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 2); // Bajamos el tamaño de la letra a 2 (mediano) para los botones
-    
-    // Definimos el tamaño del botón desde su centro: medirá 340 de ancho (170 a cada lado) y 50 de alto (25 arriba y abajo)
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 2); 
     int medioAnchoBoton = 170; 
     int medioAltoBoton = 25;   
     
-    // Botón 1: CONTINENTAL
-    // rectangle(X_Izquierda, Y_Arriba, X_Derecha, Y_Abajo)
+    // Botones del menú principal
     rectangle(mitadX - medioAnchoBoton, mitadY - 100 - medioAltoBoton, mitadX + medioAnchoBoton, mitadY - 100 + medioAltoBoton);
     outtextxy(mitadX, mitadY - 100, (char*)"CONTINENTAL");
     
-    // Botón 2: CHINCHON
     rectangle(mitadX - medioAnchoBoton, mitadY - 30 - medioAltoBoton, mitadX + medioAnchoBoton, mitadY - 30 + medioAltoBoton);
     outtextxy(mitadX, mitadY - 30, (char*)"CHINCHON");
     
-    // Botón 3: TUTE
     rectangle(mitadX - medioAnchoBoton, mitadY + 40 - medioAltoBoton, mitadX + medioAnchoBoton, mitadY + 40 + medioAltoBoton);
     outtextxy(mitadX, mitadY + 40, (char*)"TUTE");
     
-    // Botón 4: ESCOBA
     rectangle(mitadX - medioAnchoBoton, mitadY + 110 - medioAltoBoton, mitadX + medioAnchoBoton, mitadY + 110 + medioAltoBoton);
     outtextxy(mitadX, mitadY + 110, (char*)"ESCOBA");
     
-    // --- PIE DE PÁGINA ---
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1); // Letra tamaño 1 (pequeña) para las instrucciones
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1); 
     outtextxy(mitadX, mitadY + 200, (char*)"Presiona ESC para salir o haz clic en un juego");
 }
 
 int controlarMenu() {
-    int clickX, clickY; // Variables para almacenar la coordenada X e Y de donde pinche el ratón
+    int clickX, clickY;
     int mitadX = getmaxx() / 2;
     int mitadY = getmaxy() / 2;
     int medioAnchoBoton = 170;
     int medioAltoBoton = 25;
 
-    // Bucle infinito: el programa se queda aquí hasta que el usuario haga una acción válida
     while(1) {
-        // CONTROL POR TECLADO (Alternativa por si no se usa el ratón)
-        if (kbhit()) { // Si se ha pulsado una tecla...
-            if (getch() == 27) { // Compara si esa tecla es ESC (su código ASCII es el 27)
-                return 5; // Devuelve un 5 al main para cerrar el programa
-            }
+        if (kbhit()) {
+            if (getch() == 27) return 5; // Tecla ESC
         }
 
-        // CONTROL POR RATÓN
-        if (ismouseclick(WM_LBUTTONDOWN)) { // Pregunta si se ha detectado un clic izquierdo (LBUTTONDOWN)
-            getmouseclick(WM_LBUTTONDOWN, clickX, clickY); // "Captura" los píxeles X e Y exactos del clic
+        if (ismouseclick(WM_LBUTTONDOWN)) {
+            getmouseclick(WM_LBUTTONDOWN, clickX, clickY); //
 
-            // PRIMERA VALIDACIÓN: ¿El clic está dentro del ancho horizontal (X) que comparten todos los botones?
             if (clickX >= (mitadX - medioAnchoBoton) && clickX <= (mitadX + medioAnchoBoton)) {
-                
-                // SEGUNDA VALIDACIÓN: Comprobamos la altura (Y) para saber en cuál de los 4 rectángulos cayó el clic
-                
-                // ¿El clic cayó en la altura de CONTINENTAL?
-                if (clickY >= (mitadY - 100 - medioAltoBoton) && clickY <= (mitadY - 100 + medioAltoBoton)) {
-                    return 1; // Devuelve 1 para iniciar Continental
-                }
-                // ¿El clic cayó en la altura de CHINCHON?
-                if (clickY >= (mitadY - 30 - medioAltoBoton) && clickY <= (mitadY - 30 + medioAltoBoton)) {
-                    return 2; // Devuelve 2 para iniciar Chinchón
-                }
-                // ¿El clic cayó en la altura de TUTE?
-                if (clickY >= (mitadY + 40 - medioAltoBoton) && clickY <= (mitadY + 40 + medioAltoBoton)) {
-                    return 3; // Devuelve 3 para iniciar Tute
-                }
-                // ¿El clic cayó en la altura de ESCOBA?
-                if (clickY >= (mitadY + 110 - medioAltoBoton) && clickY <= (mitadY + 110 + medioAltoBoton)) {
-                    return 4; // Devuelve 4 para iniciar la Escoba
-                }
+                if (clickY >= (mitadY - 100 - medioAltoBoton) && clickY <= (mitadY - 100 + medioAltoBoton)) return 1;
+                if (clickY >= (mitadY - 30 - medioAltoBoton) && clickY <= (mitadY - 30 + medioAltoBoton)) return 2;
+                if (clickY >= (mitadY + 40 - medioAltoBoton) && clickY <= (mitadY + 40 + medioAltoBoton)) return 3;
+                if (clickY >= (mitadY + 110 - medioAltoBoton) && clickY <= (mitadY + 110 + medioAltoBoton)) return 4;
             }
         }
     }
 }
 
 void ejecutarJuego(int opcionSeleccionada) {
-    // Un switch-case clásico que actúa como un "desviador de tráfico". 
-    // Envía el programa a la función del juego que corresponda según el número recibido.
     switch(opcionSeleccionada) {
         case 1: jugarContinental(); break;
         case 2: jugarChinchon();    break;
@@ -169,61 +147,168 @@ void ejecutarJuego(int opcionSeleccionada) {
     }
 }
 
-// ==========================================
-// ZONA DE DESARROLLO DE LOS JUEGOS
-// ==========================================
+// =================================================================
+// LÓGICA DEL MODO DE JUEGO: CONTINENTAL
+// =================================================================
 
-void prepararPantallaJuego(char* nombreDelJuego) {
-    cleardevice(); // Borra el menú principal de la pantalla
+void prepararPantallaJuego(const char* nombreDelJuego) {
+    cleardevice();
     int mitadX = getmaxx() / 2;
-    int mitadY = getmaxy() / 2;
-    
     settextjustify(CENTER_TEXT, CENTER_TEXT);
     setcolor(WHITE);
-    
-    // Dibuja un título superior en la nueva pantalla con el nombre del juego que le pasemos
     settextstyle(DEFAULT_FONT, HORIZ_DIR, 3);
-    outtextxy(mitadX, mitadY - 100, nombreDelJuego);
+    outtextxy(mitadX, 50, (char*)nombreDelJuego);
 }
 
 void jugarContinental() {
-    // Llama a la función de arriba pasando el título para limpiar la pantalla
-    prepararPantallaJuego((char*)"MESA DE CONTINENTAL");
+    // Inicialización del estado de juego: 0 jugadores y Mano 1
+    miPartida.cantidadJugadores = 0;
+    miPartida.manoActual = 1;      
     
-    // Mensajes informativos provisionales en la pantalla del juego
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
-    outtextxy(getmaxx()/2, getmaxy()/2, (char*)"[Espacio para programar la logica de Continental]");
-    outtextxy(getmaxx()/2, getmaxy()/2 + 100, (char*)"Pulsa cualquier tecla para regresar al menu...");
+    // FASE 1: Pantalla de añadir/editar/eliminar jugadores
+    pantallaConfigurarJugadores(&miPartida);
     
-    getch(); // Detiene el programa aquí. Cuando el usuario pulse una tecla, la función termina y regresa al menú.
+    // FASE 2: Si el usuario pulsa jugar y se añadieron participantes, entramos a la mesa
+    if (miPartida.cantidadJugadores > 0) {
+        pantallaMesaJuego(&miPartida);
+    }
 }
 
+// PANTALLA 1: Configuración de jugadores interactiva y automática (Ref: PantallaContinentalJugadores.png)
+void pantallaConfigurarJugadores(struct PartidaContinental *partida) {
+    bool salirAjustes = false;
+    int clickX, clickY;
+    int mitadX = getmaxx() / 2;
+    
+    while (!salirAjustes) {
+        cleardevice(); 
+        prepararPantallaJuego("CONTINENTAL");
+        
+        // --- BOTÓN 1: AÑADIR JUGADOR (Esquina superior izquierda)
+        settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
+        setcolor(WHITE);
+        rectangle(100, 120, 350, 180); 
+        outtextxy(225, 150, (char*)"ANADIR JUGADOR");
+        
+        // --- BOTÓN 2: JUGAR (Esquina inferior derecha)
+        rectangle(getmaxx() - 350, getmaxy() - 120, getmaxx() - 100, getmaxy() - 60);
+        outtextxy(getmaxx() - 225, getmaxy() - 90, (char*)"JUGAR");
+        
+        // --- TEXTO INDICATIVO DE LÍMITE
+        settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
+        outtextxy(200, getmaxy() - 90, (char*)"MAX: 7 JUGADORES");
+        
+        // =================================================================
+        // DIBUJADO DINÁMICO EN FILAS (TAL COMO EN VUESTRA FOTO)
+        // =================================================================
+        settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
+        
+        for (int i = 0; i < partida->cantidadJugadores; i++) {
+            // Calcula dinámicamente la altura 'Y' de cada fila para que no se pisen
+            int filaY = 220 + (i * 60); 
+            
+            // 1. Dibuja el Nombre (Alineado a la izquierda)
+            settextjustify(LEFT_TEXT, CENTER_TEXT);
+            char bufferNombre[50];
+            sprintf(bufferNombre, "%s:", partida->listaJugadores[i].nombre);
+            outtextxy(100, filaY + 20, bufferNombre); 
+            
+            // Volvemos a centrar la alineación de texto para los botones rectangulares
+            settextjustify(CENTER_TEXT, CENTER_TEXT);
+            
+            // 2. Dibuja el botón EDITAR
+            rectangle(350, filaY, 480, filaY + 40);
+            outtextxy(415, filaY + 20, (char*)"EDITAR");
+            
+            // 3. Dibuja el botón ELIMINAR
+            rectangle(510, filaY, 660, filaY + 40);
+            outtextxy(585, filaY + 20, (char*)"ELIMINAR");
+        }
+
+        // =================================================================
+        // GESTIÓN Y DETECCIÓN DE CLICS DEL RATÓN
+        // =================================================================
+        if (ismouseclick(WM_LBUTTONDOWN)) {
+            getmouseclick(WM_LBUTTONDOWN, clickX, clickY);
+            
+            // ¿Clic en "ANADIR JUGADOR"?
+            if (clickX >= 100 && clickX <= 350 && clickY >= 120 && clickY <= 180) {
+                if (partida->cantidadJugadores < 7) {
+                    
+                    // Congelamos la ventana gráfica momentáneamente para escribir el nombre en consola
+                    char nuevoNombre[30];
+                    printf("\n==================================\n");
+                    printf("INTRODUCE EL NOMBRE DEL JUGADOR %d: ", partida->cantidadJugadores + 1);
+                    scanf("%29s", nuevoNombre);
+                    printf("==================================\n");
+                    
+                    // Guarda el nombre en la estructura e incrementa la cuenta para que el bucle lo pinte
+                    strcpy(partida->listaJugadores[partida->cantidadJugadores].nombre, nuevoNombre);
+                    partida->cantidadJugadores++; 
+                }
+            }
+            
+            // ¿Clic en "JUGAR"?
+            if (clickX >= (getmaxx() - 350) && clickX <= (getmaxx() - 100) && clickY >= (getmaxy() - 120) && clickY <= (getmaxy() - 60)) {
+                if (partida->cantidadJugadores > 0) {
+                    salirAjustes = true; // Permite romper el bucle y saltar a la mesa de juego
+                }
+            }
+            
+            // Evalúa si el clic impactó sobre los botones internos (EDITAR/ELIMINAR) de alguna fila
+            for (int i = 0; i < partida->cantidadJugadores; i++) {
+                int filaY = 220 + (i * 60);
+                
+                // Si pulsa en el botón ELIMINAR de la fila 'i'
+                if (clickX >= 510 && clickX <= 660 && clickY >= filaY && clickY <= (filaY + 40)) {
+                    // Reordenamos el array desplazando los elementos siguientes hacia arriba
+                    for (int j = i; j < partida->cantidadJugadores - 1; j++) {
+                        strcpy(partida->listaJugadores[j].nombre, partida->listaJugadores[j + 1].nombre);
+                    }
+                    partida->cantidadJugadores--; // Restamos 1 al total
+                    break; 
+                }
+                
+                // Si pulsa en el botón EDITAR de la fila 'i'
+                if (clickX >= 350 && clickX <= 480 && clickY >= filaY && clickY <= (filaY + 40)) {
+                    char nombreEditado[30];
+                    printf("\n==================================\n");
+                    printf("EDITAR NOMBRE (ACTUAL: %s): ", partida->listaJugadores[i].nombre);
+                    scanf("%29s", nombreEditado);
+                    printf("==================================\n");
+                    strcpy(partida->listaJugadores[i].nombre, nombreEditado); // Reemplaza por el nuevo nombre
+                    break;
+                }
+            }
+        }
+        delay(30); // Estabilizador de frames de la ventana
+    }
+}
+
+// PANTALLA 2: La Mesa de juego (A donde te redirige al pulsar JUGAR)
+void pantallaMesaJuego(struct PartidaContinental *partida) {
+    cleardevice();
+    int mitadX = getmaxx() / 2;
+    
+    prepararPantallaJuego("MESA DE JUEGO");
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
+    outtextxy(mitadX, getmaxy() / 2 - 50, (char*)"¡Partida Iniciada con Exito!");
+    
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
+    outtextxy(mitadX, getmaxy() / 2 + 50, (char*)"Pulsa cualquier tecla para regresar al menu principal...");
+    
+    getch(); 
+}
+
+// =================================================================
+// PROTOTIPOS RESTANTES DE LOS OTROS JUEGOS
+// =================================================================
 void jugarChinchon() {
-    prepararPantallaJuego((char*)"MESA DE CHINCHON");
-    
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
-    outtextxy(getmaxx()/2, getmaxy()/2, (char*)"[Espacio para programar la logica de Chinchon]");
-    outtextxy(getmaxx()/2, getmaxy()/2 + 100, (char*)"Pulsa cualquier tecla para regresar al menu...");
-    
-    getch(); // Espera tecla para volver al menú principal
+    prepararPantallaJuego("MESA DE CHINCHON"); getch();
 }
-
 void jugarTute() {
-    prepararPantallaJuego((char*)"MESA DE TUTE");
-    
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
-    outtextxy(getmaxx()/2, getmaxy()/2, (char*)"[Espacio para programar la logica de Tute]");
-    outtextxy(getmaxx()/2, getmaxy()/2 + 100, (char*)"Pulsa cualquier tecla para regresar al menu...");
-    
-    getch(); // Espera tecla para volver al menú principal
+    prepararPantallaJuego("MESA DE TUTE"); getch();
 }
-
 void jugarEscoba() {
-    prepararPantallaJuego((char*)"MESA DE LA ESCOBA");
-    
-    settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
-    outtextxy(getmaxx()/2, getmaxy()/2, (char*)"[Espacio para programar la logica de la Escoba]");
-    outtextxy(getmaxx()/2, getmaxy()/2 + 100, (char*)"Pulsa cualquier tecla para regresar al menu...");
-    
-    getch(); // Espera tecla para volver al menú principal
+    prepararPantallaJuego("MESA DE LA ESCOBA"); getch();
 }
