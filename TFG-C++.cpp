@@ -1,11 +1,10 @@
-#include <stdio.h>    // sprintf, sscanf, fopen, fprintf, fscanf, fclose
-#include <cstdio>     // CORREGIDO: Inclusión estándar para sscanf en entornos C++
-#include <conio.h>    // getch, kbhit
-#include <string.h>   // strcpy, strlen
-#include <graphics.h> // Funciones de WinBGIm
+#include <stdio.h>    
+#include <conio.h>    
+#include <string.h>   
+#include <graphics.h> 
 
 // =================================================================
-// STRUCTS SIMPLES (Nivel 1º DAM)
+// STRUCTS SIMPLES 
 // =================================================================
 
 struct EntradaHistorial {
@@ -13,32 +12,30 @@ struct EntradaHistorial {
     char ganador[30];
 };
 
-// --- Estructuras para el JUEGO 1: CONTINENTAL ---
 struct Jugador {
     char nombre[30];
-    int puntosPorMano[12];          // CORREGIDO: Ampliado para mayor seguridad
-    int puntosAcumuladosEnMano[12]; // CORREGIDO: Ampliado para mayor seguridad
+    int puntosPorMano[12];       
+    int puntosAcumuladosEnMano[12]; 
     int puntosTotales;              
     bool yaAnoto;                   
 };
 
 struct PartidaContinental {
-    struct Jugador listaJugadores[8]; // CORREGIDO: Margen seguro para evitar desbordamientos
+    struct Jugador listaJugadores[8]; 
     int cantidadJugadores;            
-    int manoActual;                   
+    int manoActual;                    
 };
 
-// --- Estructuras para el JUEGO 2: CHINCHÓN ---
 struct JugadorChinchon {
     char nombre[30];
-    int puntosPorRonda[100];  // CORREGIDO: Mayor margen por rondas largas
+    int puntosPorRonda[100];  
     int puntosAcumuladosEnRonda[100]; 
-    int puntosTotales;               
-    bool yaAnoto;                    
+    int puntosTotales;                
+    bool yaAnoto;                     
 };
 
 struct PartidaChinchon {
-    struct JugadorChinchon listaJugadores[8]; // CORREGIDO: Margen seguro
+    struct JugadorChinchon listaJugadores[8]; 
     int cantidadJugadores;            
     int rondaActual;                  
 };
@@ -49,34 +46,34 @@ void actualizarPantalla();
 void dibujarMenu();
 int controlarMenu();
 void ejecutarJuego(int opcionSeleccionada);
-void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, void (*redibujarFondo)());
+void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, int pantallaOrigen);
 
 void guardarEnHistorial(const char* juego, const char* ganador);
 void mostrarPantallaHistorial();
 
-// Prototipos Módulo 1: Continental
+// Módulo 1: Continental
 void jugarContinental();
 void prepararPantallaJuego(const char* nombreDelJuego);
-void pantallaConfigurarJugadores(struct PartidaContinental *partida);
+void pantallaConfigurarJugadores();
 void redibujarFondoConfigurarContinental(); 
-void pantallaMesaJuego(struct PartidaContinental *partida);
+void pantallaMesaJuego();
 void redibujarFondoMesaContinental(); 
-void ventanaEmergentePuntos(struct PartidaContinental *partida, int i);
-void pantallaResultadosFinales(struct PartidaContinental *partida);
+void ventanaEmergentePuntos(int i);
+void pantallaResultadosFinales();
 
-// Prototipos Módulo 2: Chinchón
+// Módulo 2: Chinchón
 void jugarChinchon();
-void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida);
+void pantallaConfigurarJugadoresChinchon();
 void redibujarFondoConfigurarChinchon(); 
-void pantallaMesaChinchon(struct PartidaChinchon *partida);
+void pantallaMesaChinchon();
 void redibujarFondoMesaChinchon(); 
-void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i);
-void pantallaResultadosChinchon(struct PartidaChinchon *partida);
+void ventanaEmergentePuntosChinchon(int i);
+void pantallaResultadosChinchon();
 
 void jugarTute() {}
 void jugarEscoba() {}
 
-// Variables globales
+// Variables globales (Hacen el código más fácil de entender y defender)
 struct PartidaContinental miPartida;
 struct PartidaChinchon miPartidaChinchon; 
 int paginaActual = 0; 
@@ -104,7 +101,7 @@ int main() {
 }
 
 void iniciarModoGrafico() {
-    initwindow(1280, 720, (char*)"TFG - Baraja Espanola", 0, 0, false, true);
+    initwindow(1280, 720, (char*)"Baraja Espanola", 0, 0, false, true);
     setactivepage(0);
     setvisualpage(0);
 }
@@ -187,7 +184,7 @@ void ejecutarJuego(int opcionSeleccionada) {
 }
 
 // =================================================================
-// PERSISTENCIA Y MANEJO DE FICHEROS
+// PERSISTENCIA (FICHEROS)
 // =================================================================
 
 void guardarEnHistorial(const char* juego, const char* ganador) {
@@ -216,7 +213,7 @@ void mostrarPantallaHistorial() {
         char bufferLinea[100];
         
         setcolor(LIGHTBLUE);
-        outtextxy(1280 / 2, 110, (char*)"N.  -   JUEGO   -   GANADOR");
+        outtextxy(1280 / 2, 110, (char*)"N.   -   JUEGO   -   GANADOR");
         setcolor(WHITE);
         
         while (fscanf(fichero, "%29s %29s", registro.juego, registro.ganador) != EOF && contador <= 15) {
@@ -237,17 +234,17 @@ void mostrarPantallaHistorial() {
 }
 
 // =================================================================
-// MODULO BASE GRÁFICO (ANTIPARPADEO)
+// MODULO GRÁFICO (REDISEÑO SIMPLE SIN PUNTEROS COMPLEJOS)
 // =================================================================
 
-void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, void (*redibujarFondo)()) {
+void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, int pantallaOrigen) {
     int pos = strlen(resultado);
     char tecla;
 
     while (1) {
-        if (redibujarFondo != NULL) {
-            redibujarFondo();
-        }
+        // En lugar de punteros a funciones, usamos un entero simple para redibujar el fondo
+        if (pantallaOrigen == 1) redibujarFondoConfigurarContinental();
+        else if (pantallaOrigen == 2) redibujarFondoConfigurarChinchon();
 
         settextjustify(LEFT_TEXT, CENTER_TEXT);
         setcolor(WHITE);
@@ -260,10 +257,10 @@ void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, void (*red
         if (kbhit()) {
             tecla = getch(); 
 
-            if (tecla == 13) { 
+            if (tecla == 13) { // Enter
                 break;
             } 
-            else if (tecla == 8) { 
+            else if (tecla == 8) { // Retroceso
                 if (pos > 0) {
                     pos--;
                     resultado[pos] = '\0';
@@ -306,9 +303,9 @@ void jugarContinental() {
             miPartida.listaJugadores[i].puntosAcumuladosEnMano[j] = 0;
         }
     }
-    pantallaConfigurarJugadores(&miPartida);
+    pantallaConfigurarJugadores();
     if (miPartida.cantidadJugadores > 0) {
-        pantallaMesaJuego(&miPartida);
+        pantallaMesaJuego();
     }
 }
 
@@ -339,44 +336,45 @@ void redibujarFondoConfigurarContinental() {
     }
 }
 
-void pantallaConfigurarJugadores(struct PartidaContinental *partida) {
+void pantallaConfigurarJugadores() {
     bool salirAjustes = false;
     int clickX, clickY;
     while (!salirAjustes) {
         redibujarFondoConfigurarContinental();
-        actualizarPantalla(); // CORREGIDO: Llamada correcta en lugar de la firma "void actualPantalla();" que causaba error
+        actualizarPantalla(); 
 
         if (ismouseclick(WM_LBUTTONDOWN)) {
             getmouseclick(WM_LBUTTONDOWN, clickX, clickY);
             if (clickX >= 100 && clickX <= 350 && clickY >= 100 && clickY <= 150) {
-                if (partida->cantidadJugadores < 7) {
+                if (miPartida.cantidadJugadores < 7) {
                     char nuevoNombre[30] = "";
-                    leerTextoGrafico(390, 125, nuevoNombre, 25, redibujarFondoConfigurarContinental);
+                    // Pasamos un '1' para avisar que venimos de la pantalla de Continental
+                    leerTextoGrafico(390, 125, nuevoNombre, 25, 1);
                     if(strlen(nuevoNombre) > 0) {
-                        strcpy(partida->listaJugadores[partida->cantidadJugadores].nombre, nuevoNombre);
-                        partida->listaJugadores[partida->cantidadJugadores].yaAnoto = false;
-                        partida->cantidadJugadores++; 
+                        strcpy(miPartida.listaJugadores[miPartida.cantidadJugadores].nombre, nuevoNombre);
+                        miPartida.listaJugadores[miPartida.cantidadJugadores].yaAnoto = false;
+                        miPartida.cantidadJugadores++; 
                     }
                 }
             }
             if (clickX >= (1280 - 300) && clickX <= (1280 - 100) && clickY >= (720 - 100) && clickY <= (720 - 50)) {
-                if (partida->cantidadJugadores > 0) salirAjustes = true; 
+                if (miPartida.cantidadJugadores > 0) salirAjustes = true; 
             }
-            for (int i = 0; i < partida->cantidadJugadores; i++) {
+            for (int i = 0; i < miPartida.cantidadJugadores; i++) {
                 int filaY = 180 + (i * 55);
                 if (clickX >= 510 && clickX <= 660 && clickY >= filaY && clickY <= (filaY + 40)) {
-                    for (int j = i; j < partida->cantidadJugadores - 1; j++) {
-                        strcpy(partida->listaJugadores[j].nombre, partida->listaJugadores[j + 1].nombre);
+                    for (int j = i; j < miPartida.cantidadJugadores - 1; j++) {
+                        strcpy(miPartida.listaJugadores[j].nombre, miPartida.listaJugadores[j + 1].nombre);
                     }
-                    partida->cantidadJugadores--; 
+                    miPartida.cantidadJugadores--; 
                     break; 
                 }
                 if (clickX >= 350 && clickX <= 480 && clickY >= filaY && clickY <= (filaY + 40)) {
                     char nombreEditado[30] = ""; 
-                    strcpy(nombreEditado, partida->listaJugadores[i].nombre);
-                    leerTextoGrafico(690, filaY + 20, nombreEditado, 25, redibujarFondoConfigurarContinental);
+                    strcpy(nombreEditado, miPartida.listaJugadores[i].nombre);
+                    leerTextoGrafico(690, filaY + 20, nombreEditado, 25, 1);
                     if(strlen(nombreEditado) > 0) {
-                        strcpy(partida->listaJugadores[i].nombre, nombreEditado);
+                        strcpy(miPartida.listaJugadores[i].nombre, nombreEditado);
                     }
                     break;
                 }
@@ -450,7 +448,7 @@ void redibujarFondoMesaContinental() {
     }
 }
 
-void pantallaMesaJuego(struct PartidaContinental *partida) {
+void pantallaMesaJuego() {
     bool terminarMesa = false;
     int clickX, clickY;
     while (!terminarMesa) {
@@ -462,25 +460,25 @@ void pantallaMesaJuego(struct PartidaContinental *partida) {
             mostrandoErrorContinental = false;
             if (clickX >= 1280 - 280 && clickX <= 1280 - 50 && clickY >= 70 && clickY <= 120) {
                 bool todosOk = true;
-                for (int i = 0; i < partida->cantidadJugadores; i++) {
-                    if (!partida->listaJugadores[i].yaAnoto) todosOk = false;
+                for (int i = 0; i < miPartida.cantidadJugadores; i++) {
+                    if (!miPartida.listaJugadores[i].yaAnoto) todosOk = false;
                 }
                 if (todosOk) {
-                    if (partida->manoActual == 7) {
+                    if (miPartida.manoActual == 7) {
                         terminarMesa = true; 
-                        pantallaResultadosFinales(partida); 
+                        pantallaResultadosFinales(); 
                     } else {
-                        for(int i = 0; i < partida->cantidadJugadores; i++) partida->listaJugadores[i].yaAnoto = false;
-                        partida->manoActual++; 
+                        for(int i = 0; i < miPartida.cantidadJugadores; i++) miPartida.listaJugadores[i].yaAnoto = false;
+                        miPartida.manoActual++; 
                     }
                 } else mostrandoErrorContinental = true;
             }
             int btnY = 720 - 130;
-            int anchoCol = 1180 / partida->cantidadJugadores;
-            for (int i = 0; i < partida->cantidadJugadores; i++) {
+            int anchoCol = 1180 / miPartida.cantidadJugadores;
+            for (int i = 0; i < miPartida.cantidadJugadores; i++) {
                 int colX = 50 + (i * anchoCol);
                 if (clickX >= colX + 10 && clickX <= colX + anchoCol - 10 && clickY >= btnY && clickY <= btnY + 40) {
-                    ventanaEmergentePuntos(partida, i); 
+                    ventanaEmergentePuntos(i); 
                 }
             }
         }
@@ -488,17 +486,16 @@ void pantallaMesaJuego(struct PartidaContinental *partida) {
     }
 }
 
-void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
+void ventanaEmergentePuntos(int i) {
     char bufferEntrada[20] = "";
     int pos = 0;
     int cx, cy;
     bool continuar = true;
 
-    // Limpiar clics residuales del ratón antes de abrir el modal
     clearmouseclick(WM_LBUTTONDOWN);
 
-    if (partida->listaJugadores[i].yaAnoto) {
-        sprintf(bufferEntrada, "%d", partida->listaJugadores[i].puntosPorMano[partida->manoActual - 1]);
+    if (miPartida.listaJugadores[i].yaAnoto) {
+        sprintf(bufferEntrada, "%d", miPartida.listaJugadores[i].puntosPorMano[miPartida.manoActual - 1]);
         pos = strlen(bufferEntrada);
     }
 
@@ -515,7 +512,7 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
         outtextxy(750, 605, (char*)"SIGUIENTE"); 
         
         char bufferMensaje[100];
-        sprintf(bufferMensaje, "PUNTOS JUGADOR - %s: ", partida->listaJugadores[i].nombre); 
+        sprintf(bufferMensaje, "PUNTOS JUGADOR - %s: ", miPartida.listaJugadores[i].nombre); 
         settextjustify(LEFT_TEXT, CENTER_TEXT);
         outtextxy(280, 560, bufferMensaje); 
         
@@ -527,8 +524,8 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
 
         if (kbhit()) {
             char tecla = getch();
-            if (tecla == 13) continuar = false; // Tecla Enter
-            else if (tecla == 8) { // Tecla retroceso
+            if (tecla == 13) continuar = false; 
+            else if (tecla == 8) { 
                 if (pos > 0) {
                     pos--;
                     bufferEntrada[pos] = '\0';
@@ -549,49 +546,47 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
         delay(10);
     }
 
-    // CORREGIDO: Se cambia 'scanf' por 'sscanf' para leer de la variable bufferEntrada y evitar congelamientos
     int ptsInput = 0;
     if (strlen(bufferEntrada) > 0) {
         sscanf(bufferEntrada, "%d", &ptsInput); 
     }
-    int m = partida->manoActual - 1;
-    partida->listaJugadores[i].puntosPorMano[m] = ptsInput;
-    if (partida->manoActual == 1) {
-        partida->listaJugadores[i].puntosAcumuladosEnMano[0] = ptsInput; 
+    int m = miPartida.manoActual - 1;
+    miPartida.listaJugadores[i].puntosPorMano[m] = ptsInput;
+    if (miPartida.manoActual == 1) {
+        miPartida.listaJugadores[i].puntosAcumuladosEnMano[0] = ptsInput; 
     } else {
-        partida->listaJugadores[i].puntosAcumuladosEnMano[m] = partida->listaJugadores[i].puntosAcumuladosEnMano[m - 1] + ptsInput; 
+        miPartida.listaJugadores[i].puntosAcumuladosEnMano[m] = miPartida.listaJugadores[i].puntosAcumuladosEnMano[m - 1] + ptsInput; 
     }
-    partida->listaJugadores[i].yaAnoto = true;
+    miPartida.listaJugadores[i].yaAnoto = true;
     
-    // Limpiar clics residuales antes de regresar a la pantalla de la mesa principal
     clearmouseclick(WM_LBUTTONDOWN);
 }
 
-void pantallaResultadosFinales(struct PartidaContinental *partida) {
+void pantallaResultadosFinales() {
     cleardevice();
     prepararPantallaJuego("RESULTADOS FINALES - CONTINENTAL");
-    for (int i = 0; i < partida->cantidadJugadores; i++) {
-        partida->listaJugadores[i].puntosTotales = partida->listaJugadores[i].puntosAcumuladosEnMano[6]; 
+    for (int i = 0; i < miPartida.cantidadJugadores; i++) {
+        miPartida.listaJugadores[i].puntosTotales = miPartida.listaJugadores[i].puntosAcumuladosEnMano[6]; 
     }
     int indiceGanador = 0;
-    int menorPuntuacion = partida->listaJugadores[0].puntosTotales;
-    for (int i = 1; i < partida->cantidadJugadores; i++) {
-        if (partida->listaJugadores[i].puntosTotales < menorPuntuacion) {
-            menorPuntuacion = partida->listaJugadores[i].puntosTotales;
+    int menorPuntuacion = miPartida.listaJugadores[0].puntosTotales;
+    for (int i = 1; i < miPartida.cantidadJugadores; i++) {
+        if (miPartida.listaJugadores[i].puntosTotales < menorPuntuacion) {
+            menorPuntuacion = miPartida.listaJugadores[i].puntosTotales;
             indiceGanador = i;
         }
     }
     
-    guardarEnHistorial("Continental", partida->listaJugadores[indiceGanador].nombre);
+    guardarEnHistorial("Continental", miPartida.listaJugadores[indiceGanador].nombre);
     
-    int anchoCol = 1180 / partida->cantidadJugadores;
+    int anchoCol = 1180 / miPartida.cantidadJugadores;
     line(50, 120, 1280 - 50, 120);
-    for (int i = 0; i < partida->cantidadJugadores; i++) {
+    for (int i = 0; i < miPartida.cantidadJugadores; i++) {
         int colX = 50 + (i * anchoCol);
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
-        outtextxy(colX + (anchoCol / 2), 150, partida->listaJugadores[i].nombre);
+        outtextxy(colX + (anchoCol / 2), 150, miPartida.listaJugadores[i].nombre);
         char bufferTotales[50];
-        sprintf(bufferTotales, "Total: %d pts", partida->listaJugadores[i].puntosTotales);
+        sprintf(bufferTotales, "Total: %d pts", miPartida.listaJugadores[i].puntosTotales);
         outtextxy(colX + (anchoCol / 2), 200, bufferTotales);
         if (i == indiceGanador) {
             setcolor(LIGHTGREEN);
@@ -599,8 +594,8 @@ void pantallaResultadosFinales(struct PartidaContinental *partida) {
             setcolor(WHITE);
         } else {
             char bufferResta[50];
-            int resta = partida->listaJugadores[i].puntosTotales - menorPuntuacion;
-            sprintf(bufferResta, "%d - %d = %d", partida->listaJugadores[i].puntosTotales, menorPuntuacion, resta);
+            int resta = miPartida.listaJugadores[i].puntosTotales - menorPuntuacion;
+            sprintf(bufferResta, "%d - %d = %d", miPartida.listaJugadores[i].puntosTotales, menorPuntuacion, resta);
             outtextxy(colX + (anchoCol / 2), 260, bufferResta);
         }
         if(i > 0) line(colX, 120, colX, 320);
@@ -628,10 +623,10 @@ void jugarChinchon() {
         }
     }
     
-    pantallaConfigurarJugadoresChinchon(&miPartidaChinchon);
+    pantallaConfigurarJugadoresChinchon();
     
     if (miPartidaChinchon.cantidadJugadores > 0) {
-        pantallaMesaChinchon(&miPartidaChinchon);
+        pantallaMesaChinchon();
     }
 }
 
@@ -662,7 +657,7 @@ void redibujarFondoConfigurarChinchon() {
     }
 }
 
-void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
+void pantallaConfigurarJugadoresChinchon() {
     bool salirAjustes = false;
     int clickX, clickY;
     
@@ -674,37 +669,38 @@ void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
             getmouseclick(WM_LBUTTONDOWN, clickX, clickY);
             
             if (clickX >= 100 && clickX <= 350 && clickY >= 100 && clickY <= 150) {
-                if (partida->cantidadJugadores < 7) {
+                if (miPartidaChinchon.cantidadJugadores < 7) {
                     char nuevoNombre[30] = "";
-                    leerTextoGrafico(390, 125, nuevoNombre, 25, redibujarFondoConfigurarChinchon);
+                    // Pasamos un '2' para avisar que venimos de la pantalla de Chinchón
+                    leerTextoGrafico(390, 125, nuevoNombre, 25, 2);
                     
                     if(strlen(nuevoNombre) > 0) {
-                        strcpy(partida->listaJugadores[partida->cantidadJugadores].nombre, nuevoNombre);
-                        partida->listaJugadores[partida->cantidadJugadores].yaAnoto = false;
-                        partida->cantidadJugadores++; 
+                        strcpy(miPartidaChinchon.listaJugadores[miPartidaChinchon.cantidadJugadores].nombre, nuevoNombre);
+                        miPartidaChinchon.listaJugadores[miPartidaChinchon.cantidadJugadores].yaAnoto = false;
+                        miPartidaChinchon.cantidadJugadores++; 
                     }
                 }
             }
             
             if (clickX >= (1280 - 300) && clickX <= (1280 - 100) && clickY >= (720 - 100) && clickY <= (720 - 50)) {
-                if (partida->cantidadJugadores > 0) salirAjustes = true; 
+                if (miPartidaChinchon.cantidadJugadores > 0) salirAjustes = true; 
             }
             
-            for (int i = 0; i < partida->cantidadJugadores; i++) {
+            for (int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) {
                 int filaY = 180 + (i * 55);
                 if (clickX >= 510 && clickX <= 660 && clickY >= filaY && clickY <= (filaY + 40)) {
-                    for (int j = i; j < partida->cantidadJugadores - 1; j++) {
-                        strcpy(partida->listaJugadores[j].nombre, partida->listaJugadores[j + 1].nombre);
+                    for (int j = i; j < miPartidaChinchon.cantidadJugadores - 1; j++) {
+                        strcpy(miPartidaChinchon.listaJugadores[j].nombre, miPartidaChinchon.listaJugadores[j + 1].nombre);
                     }
-                    partida->cantidadJugadores--; 
+                    miPartidaChinchon.cantidadJugadores--; 
                     break; 
                 }
                 if (clickX >= 350 && clickX <= 480 && clickY >= filaY && clickY <= (filaY + 40)) {
                     char nombreEditado[30] = ""; 
-                    strcpy(nombreEditado, partida->listaJugadores[i].nombre);
-                    leerTextoGrafico(690, filaY + 20, nombreEditado, 25, redibujarFondoConfigurarChinchon);
+                    strcpy(nombreEditado, miPartidaChinchon.listaJugadores[i].nombre);
+                    leerTextoGrafico(690, filaY + 20, nombreEditado, 25, 2);
                     if(strlen(nombreEditado) > 0) {
-                        strcpy(partida->listaJugadores[i].nombre, nombreEditado);
+                        strcpy(miPartidaChinchon.listaJugadores[i].nombre, nombreEditado);
                     }
                     break;
                 }
@@ -779,7 +775,7 @@ void redibujarFondoMesaChinchon() {
     }
 }
 
-void pantallaMesaChinchon(struct PartidaChinchon *partida) {
+void pantallaMesaChinchon() {
     bool terminarMesa = false;
     int clickX, clickY;
     
@@ -793,36 +789,36 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
             
             if (clickX >= 1280 - 280 && clickX <= 1280 - 50 && clickY >= 70 && clickY <= 120) {
                 bool todosOk = true;
-                for (int i = 0; i < partida->cantidadJugadores; i++) {
-                    if (!partida->listaJugadores[i].yaAnoto) todosOk = false;
+                for (int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) {
+                    if (!miPartidaChinchon.listaJugadores[i].yaAnoto) todosOk = false;
                 }
                 
                 if (todosOk) {
                     bool alguienPerdio = false;
-                    int rIndex = partida->rondaActual - 1;
+                    int rIndex = miPartidaChinchon.rondaActual - 1;
                     
-                    for(int i = 0; i < partida->cantidadJugadores; i++) {
-                        if(partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex] >= 100) {
+                    for(int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) {
+                        if(miPartidaChinchon.listaJugadores[i].puntosAcumuladosEnRonda[rIndex] >= 100) {
                             alguienPerdio = true;
                         }
                     }
                     
                     if (alguienPerdio) {
                         terminarMesa = true; 
-                        pantallaResultadosChinchon(partida); 
+                        pantallaResultadosChinchon(); 
                     } else {
-                        for(int i = 0; i < partida->cantidadJugadores; i++) partida->listaJugadores[i].yaAnoto = false;
-                        partida->rondaActual++; 
+                        for(int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) miPartidaChinchon.listaJugadores[i].yaAnoto = false;
+                        miPartidaChinchon.rondaActual++; 
                     }
                 } else mostrandoErrorChinchon = true;
             }
             
             int btnY = 720 - 130;
-            int anchoCol = 1180 / partida->cantidadJugadores;
-            for (int i = 0; i < partida->cantidadJugadores; i++) {
+            int anchoCol = 1180 / miPartidaChinchon.cantidadJugadores;
+            for (int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) {
                 int colX = 50 + (i * anchoCol);
                 if (clickX >= colX + 10 && clickX <= colX + anchoCol - 10 && clickY >= btnY && clickY <= btnY + 40) {
-                    ventanaEmergentePuntosChinchon(partida, i); 
+                    ventanaEmergentePuntosChinchon(i); 
                 }
             }
         }
@@ -830,17 +826,16 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
     }
 }
 
-void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
+void ventanaEmergentePuntosChinchon(int i) {
     char bufferEntrada[20] = "";
     int pos = 0;
     int cx, cy;
     bool continuar = true;
 
-    // Limpiar clics residuales del ratón antes de abrir el modal
     clearmouseclick(WM_LBUTTONDOWN);
 
-    if (partida->listaJugadores[i].yaAnoto) {
-        sprintf(bufferEntrada, "%d", partida->listaJugadores[i].puntosPorRonda[partida->rondaActual - 1]);
+    if (miPartidaChinchon.listaJugadores[i].yaAnoto) {
+        sprintf(bufferEntrada, "%d", miPartidaChinchon.listaJugadores[i].puntosPorRonda[miPartidaChinchon.rondaActual - 1]);
         pos = strlen(bufferEntrada);
     }
 
@@ -857,7 +852,7 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
         outtextxy(750, 605, (char*)"SIGUIENTE"); 
         
         char bufferMensaje[100];
-        sprintf(bufferMensaje, "PUNTOS JUGADOR - %s: ", partida->listaJugadores[i].nombre); 
+        sprintf(bufferMensaje, "PUNTOS JUGADOR - %s: ", miPartidaChinchon.listaJugadores[i].nombre); 
         settextjustify(LEFT_TEXT, CENTER_TEXT);
         outtextxy(280, 560, bufferMensaje); 
         
@@ -869,8 +864,8 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
 
         if (kbhit()) {
             char tecla = getch();
-            if (tecla == 13) continuar = false; // Tecla Enter
-            else if (tecla == 8) { // Tecla retroceso
+            if (tecla == 13) continuar = false; 
+            else if (tecla == 8) { 
                 if (pos > 0) {
                     pos--;
                     bufferEntrada[pos] = '\0';
@@ -891,61 +886,59 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
         delay(10);
     }
 
-    // CORREGIDO: Se cambia 'scanf' por 'sscanf' para leer de la variable bufferEntrada y evitar colgar el programa
     int ptsInput = 0;
     if (strlen(bufferEntrada) > 0) {
         sscanf(bufferEntrada, "%d", &ptsInput); 
     }
-    int m = partida->rondaActual - 1;
-    partida->listaJugadores[i].puntosPorRonda[m] = ptsInput;
-    if (partida->rondaActual == 1) {
-        partida->listaJugadores[i].puntosAcumuladosEnRonda[0] = ptsInput; 
+    int m = miPartidaChinchon.rondaActual - 1;
+    miPartidaChinchon.listaJugadores[i].puntosPorRonda[m] = ptsInput;
+    if (miPartidaChinchon.rondaActual == 1) {
+        miPartidaChinchon.listaJugadores[i].puntosAcumuladosEnRonda[0] = ptsInput; 
     } else {
-        partida->listaJugadores[i].puntosAcumuladosEnRonda[m] = partida->listaJugadores[i].puntosAcumuladosEnRonda[m - 1] + ptsInput; 
+        miPartidaChinchon.listaJugadores[i].puntosAcumuladosEnRonda[m] = miPartidaChinchon.listaJugadores[i].puntosAcumuladosEnRonda[m - 1] + ptsInput; 
     }
-    partida->listaJugadores[i].yaAnoto = true;
+    miPartidaChinchon.listaJugadores[i].yaAnoto = true;
     
-    // Limpiar clics residuales antes de regresar a la pantalla de la mesa principal
     clearmouseclick(WM_LBUTTONDOWN);
 }
 
-void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
+void pantallaResultadosChinchon() {
     cleardevice();
-    prepararPantallaJuego("PARTIDA FINALIZADA - CHINCHON");
+    prepararPantallaJuego("RESULTADOS - CHINCHON");
     
-    int rIndex = partida->rondaActual - 1;
-    for (int i = 0; i < partida->cantidadJugadores; i++) {
-        partida->listaJugadores[i].puntosTotales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex]; 
+    int rIndex = miPartidaChinchon.rondaActual - 1;
+    for (int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) {
+        miPartidaChinchon.listaJugadores[i].puntosTotales = miPartidaChinchon.listaJugadores[i].puntosAcumuladosEnRonda[rIndex]; 
     }
     
     int indiceGanador = 0;
-    int menorPuntuacion = partida->listaJugadores[0].puntosTotales;
-    for (int i = 1; i < partida->cantidadJugadores; i++) {
-        if (partida->listaJugadores[i].puntosTotales < menorPuntuacion) {
-            menorPuntuacion = partida->listaJugadores[i].puntosTotales;
+    int menorPuntuacion = miPartidaChinchon.listaJugadores[0].puntosTotales;
+    for (int i = 1; i < miPartidaChinchon.cantidadJugadores; i++) {
+        if (miPartidaChinchon.listaJugadores[i].puntosTotales < menorPuntuacion) {
+            menorPuntuacion = miPartidaChinchon.listaJugadores[i].puntosTotales;
             indiceGanador = i;
         }
     }
     
-    guardarEnHistorial("Chinchon", partida->listaJugadores[indiceGanador].nombre);
+    guardarEnHistorial("Chinchon", miPartidaChinchon.listaJugadores[indiceGanador].nombre);
     
-    int anchoCol = 1180 / partida->cantidadJugadores;
+    int anchoCol = 1180 / miPartidaChinchon.cantidadJugadores;
     line(50, 120, 1280 - 50, 120);
-    for (int i = 0; i < partida->cantidadJugadores; i++) {
+    for (int i = 0; i < miPartidaChinchon.cantidadJugadores; i++) {
         int colX = 50 + (i * anchoCol);
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
-        outtextxy(colX + (anchoCol / 2), 150, partida->listaJugadores[i].nombre);
+        outtextxy(colX + (anchoCol / 2), 150, miPartidaChinchon.listaJugadores[i].nombre);
         char bufferTotales[50];
-        sprintf(bufferTotales, "Total: %d pts", partida->listaJugadores[i].puntosTotales);
+        sprintf(bufferTotales, "Total: %d pts", miPartidaChinchon.listaJugadores[i].puntosTotales);
         outtextxy(colX + (anchoCol / 2), 200, bufferTotales);
         
-        if (partida->listaJugadores[i].puntosTotales >= 100) {
+        if (miPartidaChinchon.listaJugadores[i].puntosTotales >= 100) {
             setcolor(LIGHTRED);
             outtextxy(colX + (anchoCol / 2), 260, (char*)"ELIMINADO");
             setcolor(WHITE);
         } else if (i == indiceGanador) {
             setcolor(LIGHTGREEN);
-            outtextxy(colX + (anchoCol / 2), 260, (char*)"¡GANADOR!");
+            outtextxy(colX + (anchoCol / 2), 260, (char*)"GANADOR!!!");
             setcolor(WHITE);
         } else {
             outtextxy(colX + (anchoCol / 2), 260, (char*)"SALVADO");
