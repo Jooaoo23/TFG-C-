@@ -1,4 +1,4 @@
-#include <stdio.h>    // sprintf, sscanf
+#include <stdio.h>    // sprintf, sscanf, fopen, fprintf, fscanf, fclose
 #include <conio.h>    // getch, kbhit
 #include <string.h>   // strcpy, strlen
 #include <graphics.h> // Funciones de WinBGIm
@@ -7,17 +7,22 @@
 // STRUCTS SIMPLES (Nivel 1º DAM)
 // =================================================================
 
+struct EntradaHistorial {
+    char juego[30];
+    char ganador[30];
+};
+
 // --- Estructuras para el JUEGO 1: CONTINENTAL ---
 struct Jugador {
     char nombre[30];
-    int puntosPorMano[7];          
-    int puntosAcumuladosEnMano[7]; 
-    int puntosTotales;             
-    bool yaAnoto;                  
+    int puntosPorMano[12];          // CORREGIDO: Ampliado para mayor seguridad
+    int puntosAcumuladosEnMano[12]; // CORREGIDO: Ampliado para mayor seguridad
+    int puntosTotales;              
+    bool yaAnoto;                   
 };
 
 struct PartidaContinental {
-    struct Jugador listaJugadores[7]; 
+    struct Jugador listaJugadores[8]; // CORREGIDO: Margen seguro para evitar desbordamientos
     int cantidadJugadores;            
     int manoActual;                    
 };
@@ -25,55 +30,56 @@ struct PartidaContinental {
 // --- Estructuras para el JUEGO 2: CHINCHÓN ---
 struct JugadorChinchon {
     char nombre[30];
-    int puntosPorRonda[50];          // Historial de puntos sueltos por ronda
-    int puntosAcumuladosEnRonda[50]; // Sumas parciales acumuladas
+    int puntosPorRonda[100];  // CORREGIDO: Mayor margen por rondas largas
+    int puntosAcumuladosEnRonda[100]; 
     int puntosTotales;               
     bool yaAnoto;                    
 };
 
 struct PartidaChinchon {
-    struct JugadorChinchon listaJugadores[7]; // Máximo 7 participantes
+    struct JugadorChinchon listaJugadores[8]; // CORREGIDO: Margen seguro
     int cantidadJugadores;            
-    int rondaActual;                  // Contador dinámico de rondas
+    int rondaActual;                  
 };
 
 // --- PROTOTIPOS DE LAS FUNCIONES ---
 void iniciarModoGrafico();
-void actualizarPantalla(); // Intercambia los buffers/páginas de video
+void actualizarPantalla(); 
 void dibujarMenu();
 int controlarMenu();
 void ejecutarJuego(int opcionSeleccionada);
 void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, void (*redibujarFondo)());
 
+void guardarEnHistorial(const char* juego, const char* ganador);
+void mostrarPantallaHistorial();
+
 // Prototipos Módulo 1: Continental
 void jugarContinental();
 void prepararPantallaJuego(const char* nombreDelJuego);
 void pantallaConfigurarJugadores(struct PartidaContinental *partida);
-void redibujarFondoConfigurarContinental(); // Auxiliar antiparpadeo
+void redibujarFondoConfigurarContinental(); 
 void pantallaMesaJuego(struct PartidaContinental *partida);
-void redibujarFondoMesaContinental(); // Auxiliar antiparpadeo
+void redibujarFondoMesaContinental(); 
 void ventanaEmergentePuntos(struct PartidaContinental *partida, int i);
 void pantallaResultadosFinales(struct PartidaContinental *partida);
 
 // Prototipos Módulo 2: Chinchón
 void jugarChinchon();
 void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida);
-void redibujarFondoConfigurarChinchon(); // Auxiliar antiparpadeo
+void redibujarFondoConfigurarChinchon(); 
 void pantallaMesaChinchon(struct PartidaChinchon *partida);
-void redibujarFondoMesaChinchon(); // Auxiliar antiparpadeo
+void redibujarFondoMesaChinchon(); 
 void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i);
 void pantallaResultadosChinchon(struct PartidaChinchon *partida);
 
-// Prototipos Módulos restantes
-void jugarTute();
-void jugarEscoba();
+void jugarTute() {}
+void jugarEscoba() {}
 
-// Variables globales de las partidas e hilos gráficos
+// Variables globales
 struct PartidaContinental miPartida;
 struct PartidaChinchon miPartidaChinchon; 
-int paginaActual = 0; // Control de Double Buffering alterno
+int paginaActual = 0; 
 
-// Variables de estado auxiliares para poder redibujar los fondos desde cualquier función
 bool mostrandoErrorContinental = false;
 bool mostrandoErrorChinchon = false;
 
@@ -87,10 +93,10 @@ int main() {
     do {
         dibujarMenu();
         opcionMenu = controlarMenu();
-        if (opcionMenu != 5) {
+        if (opcionMenu != 6) { 
             ejecutarJuego(opcionMenu);
         }
-    } while (opcionMenu != 5);
+    } while (opcionMenu != 6);
     
     closegraph();
     return 0;
@@ -103,9 +109,9 @@ void iniciarModoGrafico() {
 }
 
 void actualizarPantalla() {
-    setvisualpage(paginaActual);       // Muestra la página terminada
-    paginaActual = 1 - paginaActual;   // Cambia el índice de página (0 a 1, o 1 a 0)
-    setactivepage(paginaActual);       // Prepara la otra página para dibujar a ciegas
+    setvisualpage(paginaActual);       
+    paginaActual = 1 - paginaActual;   
+    setactivepage(paginaActual);       
 }
 
 void dibujarMenu() {
@@ -113,25 +119,32 @@ void dibujarMenu() {
     int mitadX = 1280 / 2;
     int mitadY = 720 / 2;
     int medioBotonX = 170;
-    int medioBotonY = 25;
+    int medioBotonY = 22; 
     
     settextjustify(CENTER_TEXT, CENTER_TEXT);
     setcolor(WHITE);
     settextstyle(DEFAULT_FONT, HORIZ_DIR, 4);
-    outtextxy(mitadX, mitadY - 180, (char*)"BARAJA ESPANOLA");
+    outtextxy(mitadX, mitadY - 200, (char*)"BARAJA ESPANOLA");
     
     settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
-    rectangle(mitadX - medioBotonX, mitadY - 100 - medioBotonY, mitadX + medioBotonX, mitadY - 100 + medioBotonY);
-    outtextxy(mitadX, mitadY - 100, (char*)"CONTINENTAL");
     
-    rectangle(mitadX - medioBotonX, mitadY - 30 - medioBotonY, mitadX + medioBotonX, mitadY - 30 + medioBotonY);
-    outtextxy(mitadX, mitadY - 30, (char*)"CHINCHON");
+    rectangle(mitadX - medioBotonX, mitadY - 110 - medioBotonY, mitadX + medioBotonX, mitadY - 110 + medioBotonY);
+    outtextxy(mitadX, mitadY - 110, (char*)"CONTINENTAL");
     
-    rectangle(mitadX - medioBotonX, mitadY + 40 - medioBotonY, mitadX + medioBotonX, mitadY + 40 + medioBotonY);
-    outtextxy(mitadX, mitadY + 40, (char*)"TUTE");
+    rectangle(mitadX - medioBotonX, mitadY - 50 - medioBotonY, mitadX + medioBotonX, mitadY - 50 + medioBotonY);
+    outtextxy(mitadX, mitadY - 50, (char*)"CHINCHON");
     
-    rectangle(mitadX - medioBotonX, mitadY + 110 - medioBotonY, mitadX + medioBotonX, mitadY + 110 + medioBotonY);
-    outtextxy(mitadX, mitadY + 110, (char*)"ESCOBA");
+    rectangle(mitadX - medioBotonX, mitadY + 10 - medioBotonY, mitadX + medioBotonX, mitadY + 10 + medioBotonY);
+    outtextxy(mitadX, mitadY + 10, (char*)"TUTE");
+    
+    rectangle(mitadX - medioBotonX, mitadY + 70 - medioBotonY, mitadX + medioBotonX, mitadY + 70 + medioBotonY);
+    outtextxy(mitadX, mitadY + 70, (char*)"ESCOBA");
+
+    rectangle(mitadX - medioBotonX, mitadY + 130 - medioBotonY, mitadX + medioBotonX, mitadY + 130 + medioBotonY);
+    outtextxy(mitadX, mitadY + 130, (char*)"HISTORIAL");
+    
+    rectangle(mitadX - medioBotonX, mitadY + 190 - medioBotonY, mitadX + medioBotonX, mitadY + 190 + medioBotonY);
+    outtextxy(mitadX, mitadY + 190, (char*)"SALIR");
 
     actualizarPantalla(); 
 }
@@ -141,19 +154,21 @@ int controlarMenu() {
     int mitadX = 1280 / 2;
     int mitadY = 720 / 2;
     int medioBotonX = 170;
-    int medioBotonY = 25;
+    int medioBotonY = 22;
 
     while(1) {
         if (kbhit()) {
-            if (getch() == 27) return 5; 
+            if (getch() == 27) return 6; 
         }
         if (ismouseclick(WM_LBUTTONDOWN)) {
             getmouseclick(WM_LBUTTONDOWN, clickX, clickY);
             if (clickX >= (mitadX - medioBotonX) && clickX <= (mitadX + medioBotonX)) {
-                if (clickY >= (mitadY - 100 - medioBotonY) && clickY <= (mitadY - 100 + medioBotonY)) return 1;
-                if (clickY >= (mitadY - 30 - medioBotonY) && clickY <= (mitadY - 30 + medioBotonY)) return 2;
-                if (clickY >= (mitadY + 40 - medioBotonY) && clickY <= (mitadY + 40 + medioBotonY)) return 3;
-                if (clickY >= (mitadY + 110 - medioBotonY) && clickY <= (mitadY + 110 + medioBotonY)) return 4;
+                if (clickY >= (mitadY - 110 - medioBotonY) && clickY <= (mitadY - 110 + medioBotonY)) return 1;
+                if (clickY >= (mitadY - 50 - medioBotonY) && clickY <= (mitadY - 50 + medioBotonY)) return 2;
+                if (clickY >= (mitadY + 10 - medioBotonY) && clickY <= (mitadY + 10 + medioBotonY)) return 3;
+                if (clickY >= (mitadY + 70 - medioBotonY) && clickY <= (mitadY + 70 + medioBotonY)) return 4;
+                if (clickY >= (mitadY + 130 - medioBotonY) && clickY <= (mitadY + 130 + medioBotonY)) return 5; 
+                if (clickY >= (mitadY + 190 - medioBotonY) && clickY <= (mitadY + 190 + medioBotonY)) return 6; 
             }
         }
         delay(10);
@@ -166,41 +181,88 @@ void ejecutarJuego(int opcionSeleccionada) {
         case 2: jugarChinchon();    break; 
         case 3: jugarTute();        break;
         case 4: jugarEscoba();      break;
+        case 5: mostrarPantallaHistorial(); break; 
     }
 }
 
 // =================================================================
-// MODULO BASE GRÁFICO CORREGIDO (ANTIPARPADEO)
+// PERSISTENCIA Y MANEJO DE FICHEROS
 // =================================================================
 
-// Ahora recibe un puntero a función para redibujar de forma transparente lo que hay detrás
+void guardarEnHistorial(const char* juego, const char* ganador) {
+    FILE *fichero = fopen("historial.txt", "a");
+    if (fichero != NULL) {
+        fprintf(fichero, "%s %s\n", juego, ganador);
+        fclose(fichero);
+    }
+}
+
+void mostrarPantallaHistorial() {
+    cleardevice();
+    prepararPantallaJuego("HISTORIAL DE PARTIDAS");
+    
+    settextjustify(CENTER_TEXT, CENTER_TEXT);
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
+    
+    FILE *fichero = fopen("historial.txt", "r");
+    
+    if (fichero == NULL) {
+        outtextxy(1280 / 2, 250, (char*)"No hay partidas registradas todavia.");
+    } else {
+        struct EntradaHistorial registro;
+        int filaY = 150;
+        int contador = 1;
+        char bufferLinea[100];
+        
+        setcolor(LIGHTBLUE);
+        outtextxy(1280 / 2, 110, (char*)"N.  -   JUEGO   -   GANADOR");
+        setcolor(WHITE);
+        
+        while (fscanf(fichero, "%29s %29s", registro.juego, registro.ganador) != EOF && contador <= 15) {
+            sprintf(bufferLinea, "%d.   %s   ->   %s", contador, registro.juego, registro.ganador);
+            outtextxy(1280 / 2, filaY, bufferLinea);
+            filaY += 35;
+            contador++;
+        }
+        fclose(fichero);
+    }
+    
+    setcolor(YELLOW);
+    outtextxy(1280 / 2, 650, (char*)"Presiona cualquier tecla para volver al Menu Principal");
+    setcolor(WHITE);
+    
+    actualizarPantalla();
+    getch(); 
+}
+
+// =================================================================
+// MODULO BASE GRÁFICO (ANTIPARPADEO)
+// =================================================================
+
 void leerTextoGrafico(int x, int y, char* resultado, int maxLongitud, void (*redibujarFondo)()) {
     int pos = strlen(resultado);
     char tecla;
 
     while (1) {
-        // 1. Renderizamos de fondo de la pantalla completa de forma limpia en el buffer oculto
         if (redibujarFondo != NULL) {
             redibujarFondo();
         }
 
-        // 2. Dibujamos el texto actual y el cursor simulado encima
         settextjustify(LEFT_TEXT, CENTER_TEXT);
         setcolor(WHITE);
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
         outtextxy(x, y, resultado);
         outtextxy(x + textwidth(resultado), y, (char*)"_"); 
         
-        // 3. Volcamos al monitor de forma sincronizada
         actualizarPantalla();
 
         if (kbhit()) {
             tecla = getch(); 
 
-            if (tecla == 13) { // ENTER
+            if (tecla == 13) { 
                 break;
             } 
-            else if (tecla == 8) { // BACKSPACE
+            else if (tecla == 8) { 
                 if (pos > 0) {
                     pos--;
                     resultado[pos] = '\0';
@@ -235,10 +297,10 @@ void jugarContinental() {
     miPartida.manoActual = 1;      
     mostrandoErrorContinental = false;
     
-    for(int i = 0; i < 7; i++) {
+    for(int i = 0; i < 8; i++) {
         miPartida.listaJugadores[i].puntosTotales = 0;
         miPartida.listaJugadores[i].yaAnoto = false;
-        for(int j = 0; j < 7; j++) {
+        for(int j = 0; j < 12; j++) {
             miPartida.listaJugadores[i].puntosPorMano[j] = 0;
             miPartida.listaJugadores[i].puntosAcumuladosEnMano[j] = 0;
         }
@@ -249,7 +311,6 @@ void jugarContinental() {
     }
 }
 
-// Función encargada de dibujar de forma estática la configuración de jugadores
 void redibujarFondoConfigurarContinental() {
     cleardevice(); 
     prepararPantallaJuego("CONTINENTAL");
@@ -289,7 +350,6 @@ void pantallaConfigurarJugadores(struct PartidaContinental *partida) {
             if (clickX >= 100 && clickX <= 350 && clickY >= 100 && clickY <= 150) {
                 if (partida->cantidadJugadores < 7) {
                     char nuevoNombre[30] = "";
-                    // Pasamos la función de fondo para que al tipear no borre las líneas del programa
                     leerTextoGrafico(390, 125, nuevoNombre, 25, redibujarFondoConfigurarContinental);
                     if(strlen(nuevoNombre) > 0) {
                         strcpy(partida->listaJugadores[partida->cantidadJugadores].nombre, nuevoNombre);
@@ -311,7 +371,7 @@ void pantallaConfigurarJugadores(struct PartidaContinental *partida) {
                     break; 
                 }
                 if (clickX >= 350 && clickX <= 480 && clickY >= filaY && clickY <= (filaY + 40)) {
-                    char nombreEditado[30] = "";
+                    char nombreEditado[30] = ""; 
                     strcpy(nombreEditado, partida->listaJugadores[i].nombre);
                     leerTextoGrafico(690, filaY + 20, nombreEditado, 25, redibujarFondoConfigurarContinental);
                     if(strlen(nombreEditado) > 0) {
@@ -325,7 +385,6 @@ void pantallaConfigurarJugadores(struct PartidaContinental *partida) {
     }
 }
 
-// Dibuja la matriz del juego limpia en el buffer oculto
 void redibujarFondoMesaContinental() {
     cleardevice();
     char bufferMano[100];
@@ -337,6 +396,7 @@ void redibujarFondoMesaContinental() {
         case 5: sprintf(bufferMano, "MANO 5: DOS TRIOS Y ESCALERA"); break;
         case 6: sprintf(bufferMano, "MANO 6: DOS ESCALERAS Y TRIO"); break;
         case 7: sprintf(bufferMano, "MANO 7: TRES ESCALERAS"); break;
+        default: sprintf(bufferMano, "MANO EXTRA"); break;
     }
     settextjustify(CENTER_TEXT, CENTER_TEXT);
     settextstyle(DEFAULT_FONT, HORIZ_DIR, 3);
@@ -359,8 +419,10 @@ void redibujarFondoMesaContinental() {
         outtextxy(colX + (anchoCol / 2), 160, miPartida.listaJugadores[i].nombre);
         if(i > 0) line(colX, 140, colX, 720 - 150); 
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 1);
+        
         for (int m = 0; m < miPartida.manoActual; m++) {
-            char bufferPts[40];
+            char bufferPts[60];
+            // CORREGIDO: Comprobar estrictamente si el jugador ha rellenado datos válidos para la ronda iterada
             if (m == miPartida.manoActual - 1 && !miPartida.listaJugadores[i].yaAnoto) {
                 sprintf(bufferPts, "-"); 
             } else {
@@ -432,11 +494,15 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
     int cx, cy;
     bool continuar = true;
 
+    // Si ya tenía puntos guardados (modo EDICIÓN), los cargamos por defecto para evitar basura gráfica
+    if (partida->listaJugadores[i].yaAnoto) {
+        sprintf(bufferEntrada, "%d", partida->listaJugadores[i].puntosPorMano[partida->manoActual - 1]);
+        pos = strlen(bufferEntrada);
+    }
+
     while(continuar) {
-        // Redibujamos la mesa de fondo primero para evitar que desaparezcan líneas
         redibujarFondoMesaContinental();
 
-        // Superponemos la ventana emergente en el buffer oculto
         setcolor(WHITE);
         rectangle(250, 500, 1030, 690); 
         setfillstyle(SOLID_FILL, BLACK);
@@ -479,7 +545,9 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
         delay(10);
     }
     int ptsInput = 0;
-    sscanf(bufferEntrada, "%d", &ptsInput);
+    if (strlen(bufferEntrada) > 0) {
+        sscanf(bufferEntrada, "%d", &ptsInput);
+    }
     int m = partida->manoActual - 1;
     partida->listaJugadores[i].puntosPorMano[m] = ptsInput;
     if (partida->manoActual == 1) {
@@ -504,6 +572,9 @@ void pantallaResultadosFinales(struct PartidaContinental *partida) {
             indiceGanador = i;
         }
     }
+    
+    guardarEnHistorial("Continental", partida->listaJugadores[indiceGanador].nombre);
+    
     int anchoCol = 1180 / partida->cantidadJugadores;
     line(50, 120, 1280 - 50, 120);
     for (int i = 0; i < partida->cantidadJugadores; i++) {
@@ -539,10 +610,10 @@ void jugarChinchon() {
     miPartidaChinchon.rondaActual = 1;      
     mostrandoErrorChinchon = false;
     
-    for(int i = 0; i < 7; i++) {
+    for(int i = 0; i < 8; i++) {
         miPartidaChinchon.listaJugadores[i].puntosTotales = 0;
         miPartidaChinchon.listaJugadores[i].yaAnoto = false;
-        for(int j = 0; j < 50; j++) {
+        for(int j = 0; j < 100; j++) {
             miPartidaChinchon.listaJugadores[i].puntosPorRonda[j] = 0;
             miPartidaChinchon.listaJugadores[i].puntosAcumuladosEnRonda[j] = 0;
         }
@@ -610,7 +681,7 @@ void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
                 if (partida->cantidadJugadores > 0) salirAjustes = true; 
             }
             
-            for (int i = 0; i < partida->cantidadJugadores; i++) {
+            for (int i = 0; i < i < partida->cantidadJugadores; i++) {
                 int filaY = 180 + (i * 55);
                 if (clickX >= 510 && clickX <= 660 && clickY >= filaY && clickY <= (filaY + 40)) {
                     for (int j = i; j < partida->cantidadJugadores - 1; j++) {
@@ -620,11 +691,11 @@ void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
                     break; 
                 }
                 if (clickX >= 350 && clickX <= 480 && clickY >= filaY && clickY <= (filaY + 40)) {
-                    char nombreEditated[30] = "";
-                    strcpy(nombreEditated, partida->listaJugadores[i].nombre);
-                    leerTextoGrafico(690, filaY + 20, nombreEditated, 25, redibujarFondoConfigurarChinchon);
-                    if(strlen(nombreEditated) > 0) {
-                        strcpy(partida->listaJugadores[i].nombre, nombreEditated);
+                    char nombreEditado[30] = ""; 
+                    strcpy(nombreEditado, partida->listaJugadores[i].nombre);
+                    leerTextoGrafico(690, filaY + 20, nombreEditado, 25, redibujarFondoConfigurarChinchon);
+                    if(strlen(nombreEditado) > 0) {
+                        strcpy(partida->listaJugadores[i].nombre, nombreEditado);
                     }
                     break;
                 }
@@ -731,14 +802,10 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
                         terminarMesa = true; 
                         pantallaResultadosChinchon(partida); 
                     } else {
-                        for(int i = 0; i < partida->cantidadJugadores; i++) {
-                            partida->listaJugadores[i].yaAnoto = false;
-                        }
+                        for(int i = 0; i < partida->cantidadJugadores; i++) partida->listaJugadores[i].yaAnoto = false;
                         partida->rondaActual++; 
                     }
-                } else {
-                    mostrandoErrorChinchon = true;
-                }
+                } else mostrandoErrorChinchon = true;
             }
             
             int btnY = 720 - 130;
@@ -746,7 +813,7 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
             for (int i = 0; i < partida->cantidadJugadores; i++) {
                 int colX = 50 + (i * anchoCol);
                 if (clickX >= colX + 10 && clickX <= colX + anchoCol - 10 && clickY >= btnY && clickY <= btnY + 40) {
-                    ventanaEmergentePuntosChinchon(partida, i); 
+                    ventanaEmergentePuntosChinchon(partida, i);
                 }
             }
         }
@@ -759,7 +826,12 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
     int pos = 0;
     int cx, cy;
     bool continuar = true;
-    
+
+    if (partida->listaJugadores[i].yaAnoto) {
+        sprintf(bufferEntrada, "%d", partida->listaJugadores[i].puntosPorRonda[partida->rondaActual - 1]);
+        pos = strlen(bufferEntrada);
+    }
+
     while(continuar) {
         redibujarFondoMesaChinchon();
 
@@ -767,28 +839,25 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
         rectangle(250, 500, 1030, 690); 
         setfillstyle(SOLID_FILL, BLACK);
         bar(251, 501, 1029, 689); 
-        
         rectangle(650, 580, 850, 630); 
         settextjustify(CENTER_TEXT, CENTER_TEXT);
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
         outtextxy(750, 605, (char*)"SIGUIENTE"); 
         
         char bufferMensaje[100];
-        sprintf(bufferMensaje, "PUNTOS CHINCHON - %s: ", partida->listaJugadores[i].nombre); 
+        sprintf(bufferMensaje, "PUNTOS JUGADOR - %s: ", partida->listaJugadores[i].nombre); 
         settextjustify(LEFT_TEXT, CENTER_TEXT);
         outtextxy(280, 560, bufferMensaje); 
         
         int inicioEscribirX = 280 + textwidth(bufferMensaje);
         outtextxy(inicioEscribirX, 560, bufferEntrada);
         outtextxy(inicioEscribirX + textwidth(bufferEntrada), 560, (char*)"_");
-
+        
         actualizarPantalla();
 
         if (kbhit()) {
             char tecla = getch();
-            if (tecla == 13) { 
-                continuar = false;
-            }
+            if (tecla == 13) continuar = false;
             else if (tecla == 8) { 
                 if (pos > 0) {
                     pos--;
@@ -808,26 +877,24 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
         delay(10);
     }
     int ptsInput = 0;
-    sscanf(bufferEntrada, "%d", &ptsInput);
-    int m = partida->rondaActual - 1;
-    partida->listaJugadores[i].puntosPorRonda[m] = ptsInput;
+    if (strlen(bufferEntrada) > 0) {
+        sscanf(bufferEntrada, "%d", &ptsInput);
+    }
+    int r = partida->rondaActual - 1;
+    partida->listaJugadores[i].puntosPorRonda[r] = ptsInput;
     if (partida->rondaActual == 1) {
         partida->listaJugadores[i].puntosAcumuladosEnRonda[0] = ptsInput; 
     } else {
-        partida->listaJugadores[i].puntosAcumuladosEnRonda[m] = partida->listaJugadores[i].puntosAcumuladosEnRonda[m - 1] + ptsInput; 
+        partida->listaJugadores[i].puntosAcumuladosEnRonda[r] = partida->listaJugadores[i].puntosAcumuladosEnRonda[r - 1] + ptsInput; 
     }
     partida->listaJugadores[i].yaAnoto = true;
 }
 
 void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
     cleardevice();
-    prepararPantallaJuego("RESULTADOS FINALES - CHINCHON");
+    prepararPantallaJuego("RESULTADOS - CHINCHON");
     
     int rIndex = partida->rondaActual - 1;
-    for (int i = 0; i < partida->cantidadJugadores; i++) {
-        partida->listaJugadores[i].puntosTotales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex]; 
-    }
-    
     int anchoCol = 1180 / partida->cantidadJugadores;
     line(50, 120, 1280 - 50, 120);
     
@@ -836,11 +903,12 @@ void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
         outtextxy(colX + (anchoCol / 2), 150, partida->listaJugadores[i].nombre);
         
+        int puntosFinales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex];
         char bufferTotales[50];
-        sprintf(bufferTotales, "Total: %d pts", partida->listaJugadores[i].puntosTotales);
+        sprintf(bufferTotales, "Total: %d pts", puntosFinales);
         outtextxy(colX + (anchoCol / 2), 200, bufferTotales);
         
-        if (partida->listaJugadores[i].puntosTotales >= 100) {
+        if (puntosFinales >= 100) {
             setcolor(LIGHTRED);
             outtextxy(colX + (anchoCol / 2), 260, (char*)"ELIMINADO");
             setcolor(WHITE);
@@ -853,11 +921,5 @@ void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
     }
     line(50, 320, 1280 - 50, 320);
     actualizarPantalla();
-    getch(); 
+    getch();
 }
-
-// =================================================================
-// PROTOTIPOS RESTANTES VACÍOS
-// =================================================================
-void jugarTute() {}
-void jugarEscoba() {}
