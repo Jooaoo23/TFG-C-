@@ -1,4 +1,5 @@
 #include <stdio.h>    // sprintf, sscanf, fopen, fprintf, fscanf, fclose
+#include <cstdio>     // CORREGIDO: Inclusión estándar para sscanf en entornos C++
 #include <conio.h>    // getch, kbhit
 #include <string.h>   // strcpy, strlen
 #include <graphics.h> // Funciones de WinBGIm
@@ -24,7 +25,7 @@ struct Jugador {
 struct PartidaContinental {
     struct Jugador listaJugadores[8]; // CORREGIDO: Margen seguro para evitar desbordamientos
     int cantidadJugadores;            
-    int manoActual;                    
+    int manoActual;                   
 };
 
 // --- Estructuras para el JUEGO 2: CHINCHÓN ---
@@ -343,7 +344,7 @@ void pantallaConfigurarJugadores(struct PartidaContinental *partida) {
     int clickX, clickY;
     while (!salirAjustes) {
         redibujarFondoConfigurarContinental();
-        actualizarPantalla(); 
+        actualizarPantalla(); // CORREGIDO: Llamada correcta en lugar de la firma "void actualPantalla();" que causaba error
 
         if (ismouseclick(WM_LBUTTONDOWN)) {
             getmouseclick(WM_LBUTTONDOWN, clickX, clickY);
@@ -422,7 +423,6 @@ void redibujarFondoMesaContinental() {
         
         for (int m = 0; m < miPartida.manoActual; m++) {
             char bufferPts[60];
-            // CORREGIDO: Comprobar estrictamente si el jugador ha rellenado datos válidos para la ronda iterada
             if (m == miPartida.manoActual - 1 && !miPartida.listaJugadores[i].yaAnoto) {
                 sprintf(bufferPts, "-"); 
             } else {
@@ -494,7 +494,9 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
     int cx, cy;
     bool continuar = true;
 
-    // Si ya tenía puntos guardados (modo EDICIÓN), los cargamos por defecto para evitar basura gráfica
+    // Limpiar clics residuales del ratón antes de abrir el modal
+    clearmouseclick(WM_LBUTTONDOWN);
+
     if (partida->listaJugadores[i].yaAnoto) {
         sprintf(bufferEntrada, "%d", partida->listaJugadores[i].puntosPorMano[partida->manoActual - 1]);
         pos = strlen(bufferEntrada);
@@ -525,8 +527,8 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
 
         if (kbhit()) {
             char tecla = getch();
-            if (tecla == 13) continuar = false;
-            else if (tecla == 8) { 
+            if (tecla == 13) continuar = false; // Tecla Enter
+            else if (tecla == 8) { // Tecla retroceso
                 if (pos > 0) {
                     pos--;
                     bufferEntrada[pos] = '\0';
@@ -540,13 +542,17 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
         }
         if (ismouseclick(WM_LBUTTONDOWN)) {
             getmouseclick(WM_LBUTTONDOWN, cx, cy);
-            if (cx >= 650 && cx <= 850 && cy >= 580 && cy <= 630) continuar = false; 
+            if (cx >= 650 && cx <= 850 && cy >= 580 && cy <= 630) {
+                continuar = false; 
+            }
         }
         delay(10);
     }
+
+    // CORREGIDO: Se cambia 'scanf' por 'sscanf' para leer de la variable bufferEntrada y evitar congelamientos
     int ptsInput = 0;
     if (strlen(bufferEntrada) > 0) {
-        sscanf(bufferEntrada, "%d", &ptsInput);
+        sscanf(bufferEntrada, "%d", &ptsInput); 
     }
     int m = partida->manoActual - 1;
     partida->listaJugadores[i].puntosPorMano[m] = ptsInput;
@@ -556,6 +562,9 @@ void ventanaEmergentePuntos(struct PartidaContinental *partida, int i) {
         partida->listaJugadores[i].puntosAcumuladosEnMano[m] = partida->listaJugadores[i].puntosAcumuladosEnMano[m - 1] + ptsInput; 
     }
     partida->listaJugadores[i].yaAnoto = true;
+    
+    // Limpiar clics residuales antes de regresar a la pantalla de la mesa principal
+    clearmouseclick(WM_LBUTTONDOWN);
 }
 
 void pantallaResultadosFinales(struct PartidaContinental *partida) {
@@ -681,7 +690,7 @@ void pantallaConfigurarJugadoresChinchon(struct PartidaChinchon *partida) {
                 if (partida->cantidadJugadores > 0) salirAjustes = true; 
             }
             
-            for (int i = 0; i < i < partida->cantidadJugadores; i++) {
+            for (int i = 0; i < partida->cantidadJugadores; i++) {
                 int filaY = 180 + (i * 55);
                 if (clickX >= 510 && clickX <= 660 && clickY >= filaY && clickY <= (filaY + 40)) {
                     for (int j = i; j < partida->cantidadJugadores - 1; j++) {
@@ -813,7 +822,7 @@ void pantallaMesaChinchon(struct PartidaChinchon *partida) {
             for (int i = 0; i < partida->cantidadJugadores; i++) {
                 int colX = 50 + (i * anchoCol);
                 if (clickX >= colX + 10 && clickX <= colX + anchoCol - 10 && clickY >= btnY && clickY <= btnY + 40) {
-                    ventanaEmergentePuntosChinchon(partida, i);
+                    ventanaEmergentePuntosChinchon(partida, i); 
                 }
             }
         }
@@ -826,6 +835,9 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
     int pos = 0;
     int cx, cy;
     bool continuar = true;
+
+    // Limpiar clics residuales del ratón antes de abrir el modal
+    clearmouseclick(WM_LBUTTONDOWN);
 
     if (partida->listaJugadores[i].yaAnoto) {
         sprintf(bufferEntrada, "%d", partida->listaJugadores[i].puntosPorRonda[partida->rondaActual - 1]);
@@ -857,8 +869,8 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
 
         if (kbhit()) {
             char tecla = getch();
-            if (tecla == 13) continuar = false;
-            else if (tecla == 8) { 
+            if (tecla == 13) continuar = false; // Tecla Enter
+            else if (tecla == 8) { // Tecla retroceso
                 if (pos > 0) {
                     pos--;
                     bufferEntrada[pos] = '\0';
@@ -872,54 +884,75 @@ void ventanaEmergentePuntosChinchon(struct PartidaChinchon *partida, int i) {
         }
         if (ismouseclick(WM_LBUTTONDOWN)) {
             getmouseclick(WM_LBUTTONDOWN, cx, cy);
-            if (cx >= 650 && cx <= 850 && cy >= 580 && cy <= 630) continuar = false; 
+            if (cx >= 650 && cx <= 850 && cy >= 580 && cy <= 630) {
+                continuar = false; 
+            }
         }
         delay(10);
     }
+
+    // CORREGIDO: Se cambia 'scanf' por 'sscanf' para leer de la variable bufferEntrada y evitar colgar el programa
     int ptsInput = 0;
     if (strlen(bufferEntrada) > 0) {
-        sscanf(bufferEntrada, "%d", &ptsInput);
+        sscanf(bufferEntrada, "%d", &ptsInput); 
     }
-    int r = partida->rondaActual - 1;
-    partida->listaJugadores[i].puntosPorRonda[r] = ptsInput;
+    int m = partida->rondaActual - 1;
+    partida->listaJugadores[i].puntosPorRonda[m] = ptsInput;
     if (partida->rondaActual == 1) {
         partida->listaJugadores[i].puntosAcumuladosEnRonda[0] = ptsInput; 
     } else {
-        partida->listaJugadores[i].puntosAcumuladosEnRonda[r] = partida->listaJugadores[i].puntosAcumuladosEnRonda[r - 1] + ptsInput; 
+        partida->listaJugadores[i].puntosAcumuladosEnRonda[m] = partida->listaJugadores[i].puntosAcumuladosEnRonda[m - 1] + ptsInput; 
     }
     partida->listaJugadores[i].yaAnoto = true;
+    
+    // Limpiar clics residuales antes de regresar a la pantalla de la mesa principal
+    clearmouseclick(WM_LBUTTONDOWN);
 }
 
 void pantallaResultadosChinchon(struct PartidaChinchon *partida) {
     cleardevice();
-    prepararPantallaJuego("RESULTADOS - CHINCHON");
+    prepararPantallaJuego("PARTIDA FINALIZADA - CHINCHON");
     
     int rIndex = partida->rondaActual - 1;
+    for (int i = 0; i < partida->cantidadJugadores; i++) {
+        partida->listaJugadores[i].puntosTotales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex]; 
+    }
+    
+    int indiceGanador = 0;
+    int menorPuntuacion = partida->listaJugadores[0].puntosTotales;
+    for (int i = 1; i < partida->cantidadJugadores; i++) {
+        if (partida->listaJugadores[i].puntosTotales < menorPuntuacion) {
+            menorPuntuacion = partida->listaJugadores[i].puntosTotales;
+            indiceGanador = i;
+        }
+    }
+    
+    guardarEnHistorial("Chinchon", partida->listaJugadores[indiceGanador].nombre);
+    
     int anchoCol = 1180 / partida->cantidadJugadores;
     line(50, 120, 1280 - 50, 120);
-    
     for (int i = 0; i < partida->cantidadJugadores; i++) {
         int colX = 50 + (i * anchoCol);
         settextstyle(DEFAULT_FONT, HORIZ_DIR, 2);
         outtextxy(colX + (anchoCol / 2), 150, partida->listaJugadores[i].nombre);
-        
-        int puntosFinales = partida->listaJugadores[i].puntosAcumuladosEnRonda[rIndex];
         char bufferTotales[50];
-        sprintf(bufferTotales, "Total: %d pts", puntosFinales);
+        sprintf(bufferTotales, "Total: %d pts", partida->listaJugadores[i].puntosTotales);
         outtextxy(colX + (anchoCol / 2), 200, bufferTotales);
         
-        if (puntosFinales >= 100) {
+        if (partida->listaJugadores[i].puntosTotales >= 100) {
             setcolor(LIGHTRED);
             outtextxy(colX + (anchoCol / 2), 260, (char*)"ELIMINADO");
             setcolor(WHITE);
-        } else {
+        } else if (i == indiceGanador) {
             setcolor(LIGHTGREEN);
-            outtextxy(colX + (anchoCol / 2), 260, (char*)"SALVADO");
+            outtextxy(colX + (anchoCol / 2), 260, (char*)"¡GANADOR!");
             setcolor(WHITE);
+        } else {
+            outtextxy(colX + (anchoCol / 2), 260, (char*)"SALVADO");
         }
         if(i > 0) line(colX, 120, colX, 320);
     }
     line(50, 320, 1280 - 50, 320);
     actualizarPantalla();
-    getch();
+    getch(); 
 }
